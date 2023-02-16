@@ -1,0 +1,6 @@
+[package]
+name = "t1_getting_started_1_1_hello_window"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

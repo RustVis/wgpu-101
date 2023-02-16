@@ -1,6 +1,7 @@
 
 [workspace]
 members = [
+  "code/1.getting_started/*",
 ]
 
 resolver = "2"

@@ -5,5 +5,5 @@ src = "docs"
 title = "从头学 wgpu"
 
 [output.html]
-git-repository-url = "https://github.com/RustVis/wgpu-scratch"
+git-repository-url = "https://github.com/xushaohua/wgpu-scratch"
 mathjax-support = true
