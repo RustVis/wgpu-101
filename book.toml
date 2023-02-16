@@ -1,0 +1,9 @@
+[book]
+authors = ["Xu Shaohua <shaohua@biofan.org>"]
+language = "zh_CN"
+src = "docs"
+title = "从头学 wgpu"
+
+[output.html]
+git-repository-url = "https://github.com/RustVis/wgpu-scratch"
+mathjax-support = true
