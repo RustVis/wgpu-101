@@ -1,10 +1,15 @@
 [package]
-name = "t1_getting_started_1_1_hello_window"
+name = "ch01_01_hello_window"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
+[[bin]]
+name = "p1_getting_started_ch01_01_hello_window"
+path = "src/bin/main.rs"
+
 [dependencies]
+anyhow = "1.0.69"
 env_logger = "0.10.0"
 log = "0.4.17"
 winit = "0.28.1"
