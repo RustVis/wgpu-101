@@ -4,6 +4,6 @@
 
 use ch01_02_hello_web::run;
 
-fn main() {
-    pollster::block_on(run());
+fn main() -> anyhow::Result<()> {
+    pollster::block_on(run())
 }

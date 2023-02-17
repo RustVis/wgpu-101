@@ -27,7 +27,7 @@ fn event_loop_handler<T>(event: &Event<T>, control_flow: &mut ControlFlow, windo
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
-pub async fn run() {
+pub async fn run() -> anyhow::Result<()> {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             wasm_logger::init(wasm_logger::Config::default());
@@ -41,8 +41,7 @@ pub async fn run() {
     let window = WindowBuilder::new()
         .with_title("Hello Window")
         .with_inner_size(PhysicalSize::new(800, 600))
-        .build(&event_loop)
-        .unwrap();
+        .build(&event_loop)?;
 
     #[cfg(target_arch = "wasm32")]
     {
@@ -52,9 +51,9 @@ pub async fn run() {
                 let dst = doc.get_element_by_id("wasm-container")?;
                 let canvas = web_sys::Element::from(window.canvas());
                 dst.append_child(&canvas).ok()?;
+
                 Some(())
-            })
-            .expect("Couldn't append canvas to document body.");
+            })?;
     }
 
     event_loop.run(move |event, _, control_flow| event_loop_handler(&event, control_flow, &window));

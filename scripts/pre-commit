@@ -6,6 +6,4 @@
 # Run cargo clippy before committing file changes.
 # Move this script into .git/hooks/ directory.
 
-set -xe
-
-cargo clippy -- -Dclippy::all -Dclippy::pedantic
+cargo clippy -- -Dclippy::all

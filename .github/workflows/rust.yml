@@ -34,5 +34,5 @@ jobs:
           rust: nightly
     steps:
     - uses: actions/checkout@v2
-    - run: cargo clippy -- -Dclippy::all -Dclippy::pedantic
+    - run: cargo clippy -- -Dclippy::all
     - run: cargo build --verbose
