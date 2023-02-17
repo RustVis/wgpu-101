@@ -20,7 +20,18 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: Window) -> Result<Self, Error> {
+    async fn create_surface(
+        window: &Window,
+    ) -> Result<
+        (
+            wgpu::Surface,
+            wgpu::Device,
+            wgpu::Queue,
+            wgpu::SurfaceConfiguration,
+            PhysicalSize<u32>,
+        ),
+        Error,
+    > {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
@@ -74,6 +85,13 @@ impl State {
         };
         surface.configure(&device, &config);
 
+        Ok((surface, device, queue, config, size))
+    }
+
+    fn create_render_pipeline(
+        device: &wgpu::Device,
+        config: &wgpu::SurfaceConfiguration,
+    ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/triangle.wgsl").into()),
@@ -119,6 +137,14 @@ impl State {
             },
             multiview: None,
         });
+
+        render_pipeline
+    }
+
+    pub async fn new(window: Window) -> Result<Self, Error> {
+        let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
+
+        let render_pipeline = Self::create_render_pipeline(&device, &config);
 
         Ok(Self {
             window,
