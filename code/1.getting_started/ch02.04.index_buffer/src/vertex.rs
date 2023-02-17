@@ -32,4 +32,9 @@ pub const VERTICES: &[Vertex] = &[
     Vertex {
         position: [0.0, 0.5, 0.0],
     },
+    Vertex {
+        position: [-0.5, 0.5, 0.0],
+    },
 ];
+
+pub const INDICES: &[u16] = &[0, 1, 3, 1, 2, 3];
