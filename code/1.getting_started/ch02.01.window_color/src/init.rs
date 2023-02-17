@@ -69,7 +69,7 @@ pub async fn run() -> Result<(), Error> {
         element.append_child(&canvas)?;
     }
 
-    let mut state = State::new(window).await;
+    let mut state = State::new(window).await?;
 
     event_loop
         .run(move |event, _, control_flow| event_loop_handler(&event, control_flow, &mut state));

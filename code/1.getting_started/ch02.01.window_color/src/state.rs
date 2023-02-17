@@ -6,6 +6,9 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::Error;
+
+#[derive(Debug)]
 pub struct State {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -16,14 +19,14 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(window: Window) -> Result<Self, Error> {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             ..Default::default()
         });
 
-        let surface = unsafe { instance.create_surface(&window) }.unwrap();
+        let surface = unsafe { instance.create_surface(&window) }?;
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -32,7 +35,9 @@ impl State {
                 force_fallback_adapter: false,
             })
             .await
-            .unwrap();
+            .ok_or_else(|| {
+                Error::Others("Failed to get an approprivate wgpu adapter".to_owned())
+            })?;
 
         let (device, queue) = adapter
             .request_device(
@@ -47,8 +52,7 @@ impl State {
                 },
                 None,
             )
-            .await
-            .unwrap();
+            .await?;
 
         let surface_caps = surface.get_capabilities(&adapter);
         let surface_format = surface_caps
@@ -69,14 +73,14 @@ impl State {
         };
         surface.configure(&device, &config);
 
-        Self {
+        Ok(Self {
             window,
             surface,
             device,
             queue,
             config,
             size,
-        }
+        })
     }
 
     pub fn size(&self) -> PhysicalSize<u32> {

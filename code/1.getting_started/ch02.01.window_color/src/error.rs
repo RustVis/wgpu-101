@@ -11,11 +11,20 @@ pub enum Error {
     #[error("io error")]
     Io(#[from] io::Error),
 
+    #[error("wgpu device error")]
+    WgpuDevice(#[from] wgpu::RequestDeviceError),
+
+    #[error("wgpu surface error")]
+    WpugSurface(#[from] wgpu::CreateSurfaceError),
+
     #[error("window error")]
     Winit(#[from] winit::error::OsError),
 
     #[error("web error")]
     Web(String),
+
+    #[error("other error")]
+    Others(String),
 }
 
 #[cfg(target_arch = "wasm32")]
