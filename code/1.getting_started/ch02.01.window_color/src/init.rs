@@ -21,8 +21,17 @@ fn event_loop_handler<T>(event: &Event<T>, control_flow: &mut ControlFlow, state
             ref event,
             window_id,
             ..
-        } if *window_id == state.window().id() && event == &WindowEvent::CloseRequested => {
-            *control_flow = ControlFlow::Exit;
+        } if *window_id == state.window().id() => {
+            if !state.input(event) {
+                match event {
+                    WindowEvent::Resized(physical_size) => state.resize(*physical_size),
+                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                        state.resize(**new_inner_size);
+                    }
+                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    _ => {}
+                }
+            }
         }
         Event::RedrawRequested(window_id) if *window_id == state.window().id() => {
             state.update();
