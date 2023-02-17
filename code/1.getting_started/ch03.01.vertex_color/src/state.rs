@@ -2,6 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+use std::time;
 use cgmath::Vector3;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -10,6 +11,8 @@ use winit::window::Window;
 
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
+
+const ANIMATION_SPEED: f32 = 1.0;
 
 #[derive(Debug)]
 pub struct State {
@@ -28,6 +31,8 @@ pub struct State {
 
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
+
+    start_time: time::Instant,
 }
 
 impl State {
@@ -226,6 +231,8 @@ impl State {
 
             vertex_buffer,
             num_vertices,
+
+            start_time: time::Instant::now(),
         })
     }
 
@@ -251,6 +258,16 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        let dt = self.start_time.elapsed();
+        let dt = ANIMATION_SPEED * dt.as_secs_f32();
+        self.vertex_color.x = dt.sin();
+        self.vertex_color.y = dt.cos();
+        // log::info!("vertex color: {}:{}", self.vertex_color.x, self.vertex_color.y);
+        let vertex_color_ref: &[f32; 3] = self.vertex_color.as_ref();
+
+        self
+            .queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(vertex_color_ref));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
