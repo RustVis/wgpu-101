@@ -2,7 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use ch03_01_vertex_color::{run, Error};
+use ch03_01_uniform::{run, Error};
 
 fn main() -> Result<(), Error> {
     pollster::block_on(run())

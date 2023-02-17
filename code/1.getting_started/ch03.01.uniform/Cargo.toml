@@ -1,11 +1,11 @@
 [package]
-name = "ch03_01_vertex_color"
+name = "ch03_01_uniform"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "p1_getting_started_ch03_01_vertex_color"
+name = "p1_getting_started_ch03_01_uniform"
 path = "src/bin/main.rs"
 
 [lib]
