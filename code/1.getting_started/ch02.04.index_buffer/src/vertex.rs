@@ -30,7 +30,7 @@ pub const VERTICES: &[Vertex] = &[
         position: [0.5, -0.5, 0.0],
     },
     Vertex {
-        position: [0.0, 0.5, 0.0],
+        position: [0.5, 0.5, 0.0],
     },
     Vertex {
         position: [-0.5, 0.5, 0.0],
