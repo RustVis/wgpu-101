@@ -166,11 +166,11 @@ dependencies = [
 name = "ch01_02_hello_web"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "cfg-if",
  "env_logger",
  "log",
  "pollster",
+ "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",

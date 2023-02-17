@@ -2,6 +2,8 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+mod error;
+
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
         use wasm_bindgen::prelude::wasm_bindgen;
@@ -12,6 +14,8 @@ use winit::dpi::PhysicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
+
+pub use error::Error;
 
 fn event_loop_handler<T>(event: &Event<T>, control_flow: &mut ControlFlow, window: &Window) {
     match event {
@@ -27,7 +31,7 @@ fn event_loop_handler<T>(event: &Event<T>, control_flow: &mut ControlFlow, windo
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
-pub async fn run() -> anyhow::Result<()> {
+pub async fn run() -> Result<(), Error> {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             wasm_logger::init(wasm_logger::Config::default());
@@ -45,15 +49,12 @@ pub async fn run() -> anyhow::Result<()> {
 
     #[cfg(target_arch = "wasm32")]
     {
-        web_sys::window()
+        let element = web_sys::window()
             .and_then(|win| win.document())
-            .and_then(|doc| {
-                let dst = doc.get_element_by_id("wasm-container")?;
-                let canvas = web_sys::Element::from(window.canvas());
-                dst.append_child(&canvas).ok()?;
-
-                Some(())
-            })?;
+            .and_then(|doc| doc.get_element_by_id("wasm-container"))
+            .ok_or_else(|| Error::Web("failed to find dom element '#wasm-container'".to_owned()))?;
+        let canvas = web_sys::Element::from(window.canvas());
+        element.append_child(&canvas)?;
     }
 
     event_loop.run(move |event, _, control_flow| event_loop_handler(&event, control_flow, &window));

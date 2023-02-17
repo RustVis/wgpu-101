@@ -12,10 +12,10 @@ path = "src/bin/main.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-anyhow = "1.0.69"
 cfg-if = "1.0.0"
 log = "0.4.17"
 pollster = "0.3.0"
+thiserror = "1.0.38"
 wasm-bindgen-futures = "0.4.34"
 winit = "0.28.1"
 
