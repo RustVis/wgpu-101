@@ -55,7 +55,7 @@ pub async fn run() -> Result<(), Error> {
     log::info!("Creating a new with with size 800x600");
     let event_loop = EventLoop::new();
     let window: Window = WindowBuilder::new()
-        .with_title("Hello Window")
+        .with_title("Window Color")
         .with_inner_size(PhysicalSize::new(800, 600))
         .build(&event_loop)?;
 

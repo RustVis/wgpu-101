@@ -2,12 +2,6 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-cfg_if::cfg_if! {
-    if #[cfg(target_arch = "wasm32")] {
-        use wasm_bindgen::prelude::wasm_bindgen;
-        use winit::platform::web::WindowExtWebSys;
-    }
-}
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
