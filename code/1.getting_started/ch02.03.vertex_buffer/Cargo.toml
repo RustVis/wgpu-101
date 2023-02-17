@@ -1,11 +1,11 @@
 [package]
-name = "ch02_03_hello_buffer"
+name = "ch02_03_vertex_buffer"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "p1_getting_started_ch02_03_hello_buffer"
+name = "p1_getting_started_ch02_03_vertex_buffer"
 path = "src/bin/main.rs"
 
 [lib]

@@ -307,7 +307,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch02_03_hello_buffer"
+name = "ch02_03_vertex_buffer"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
