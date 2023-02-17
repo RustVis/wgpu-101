@@ -276,6 +276,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch02_02_hello_triangle"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
