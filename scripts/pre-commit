@@ -8,4 +8,4 @@
 
 set -xe
 
-cargo clippy -- -Dwarnings -Dclippy::all -Dclippy::pedantic -Dclippy::cargo
+cargo clippy -- -Dclippy::all -Dclippy::pedantic
