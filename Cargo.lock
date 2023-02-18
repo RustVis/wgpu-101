@@ -362,12 +362,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch03_01_vertex_color"
+name = "ch03_01_uniform"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cfg-if",
  "cgmath",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "ch03_02_more_properties"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
  "env_logger",
  "log",
  "pollster",
