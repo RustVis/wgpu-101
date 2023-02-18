@@ -172,6 +172,7 @@ impl State {
         queue: &wgpu::Queue,
     ) -> (Texture, wgpu::BindGroupLayout, wgpu::BindGroup) {
         let texture_bytes = include_bytes!("../res/textures/container.jpg");
+        //let texture_bytes = include_bytes!("../res/textures/awesome_face.png");
         let container_texture =
             Texture::from_bytes(&device, &queue, texture_bytes, Some("container")).unwrap();
 
