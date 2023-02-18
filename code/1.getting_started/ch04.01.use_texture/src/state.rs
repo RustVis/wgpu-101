@@ -7,6 +7,7 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::texture::Texture;
 use crate::vertex::{Vertex, INDICES, VERTICES};
 use crate::Error;
 
@@ -24,6 +25,9 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+
+    texture_bind_group: wgpu::BindGroup,
+    container_texture: Texture,
 }
 
 impl State {
@@ -98,6 +102,7 @@ impl State {
     fn create_render_pipeline(
         device: &wgpu::Device,
         config: &wgpu::SurfaceConfiguration,
+        bind_group_layouts: &[&wgpu::BindGroupLayout],
     ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -107,7 +112,7 @@ impl State {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts,
                 push_constant_ranges: &[],
             });
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -162,10 +167,68 @@ impl State {
         (vertex_buffer, index_buffer)
     }
 
+    fn create_texture(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> (Texture, wgpu::BindGroupLayout, wgpu::BindGroup) {
+        let texture_bytes = include_bytes!("../res/textures/container.jpg");
+        let container_texture =
+            Texture::from_bytes(&device, &queue, texture_bytes, Some("container")).unwrap();
+
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
+
+        let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
+                },
+            ],
+            label: Some("texture_bind_group"),
+        });
+
+        (
+            container_texture,
+            texture_bind_group_layout,
+            texture_bind_group,
+        )
+    }
+
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let render_pipeline = Self::create_render_pipeline(&device, &config);
+        let (container_texture, texture_bind_group_layout, texture_bind_group) =
+            Self::create_texture(&device, &queue);
+
+        let bind_group_layouts = [&texture_bind_group_layout];
+        let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
+
         let (vertex_buffer, index_buffer) = Self::create_buffers(&device);
         let num_indices = INDICES.len() as u32;
 
@@ -182,6 +245,9 @@ impl State {
             vertex_buffer,
             index_buffer,
             num_indices,
+
+            texture_bind_group,
+            container_texture,
         })
     }
 
@@ -239,6 +305,7 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);

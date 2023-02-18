@@ -11,6 +11,9 @@ pub enum Error {
     #[error("io error")]
     Io(#[from] io::Error),
 
+    #[error("image error")]
+    Image(#[from] image::ImageError),
+
     #[error("wgpu device error")]
     WgpuDevice(#[from] wgpu::RequestDeviceError),
 
