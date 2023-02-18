@@ -399,6 +399,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch03_03_colorful_rect"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "ch04_01_use_texture"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

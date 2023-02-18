@@ -166,7 +166,6 @@ impl State {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
         let render_pipeline = Self::create_render_pipeline(&device, &config);
-
         let (vertex_buffer, index_buffer) = Self::create_buffers(&device);
         let num_indices = INDICES.len() as u32;
 

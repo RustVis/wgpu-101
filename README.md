@@ -1,4 +1,4 @@
 
-# 关于
-入门 wgpu 时的一些参考资料以及示例代码.
+# About
+Getting started with WGPU programming
 
