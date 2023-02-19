@@ -27,7 +27,6 @@ pub struct State {
     num_indices: u32,
 
     texture_bind_group: wgpu::BindGroup,
-    container_texture: Texture,
 }
 
 impl State {
@@ -170,7 +169,7 @@ impl State {
     fn create_texture(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> (Texture, wgpu::BindGroupLayout, wgpu::BindGroup) {
+    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         let texture_bytes = include_bytes!("../res/textures/container.jpg");
         //let texture_bytes = include_bytes!("../res/textures/awesome_face.png");
         let container_texture =
@@ -214,18 +213,13 @@ impl State {
             label: Some("texture_bind_group"),
         });
 
-        (
-            container_texture,
-            texture_bind_group_layout,
-            texture_bind_group,
-        )
+        (texture_bind_group_layout, texture_bind_group)
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let (container_texture, texture_bind_group_layout, texture_bind_group) =
-            Self::create_texture(&device, &queue);
+        let (texture_bind_group_layout, texture_bind_group) = Self::create_texture(&device, &queue);
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
@@ -248,7 +242,6 @@ impl State {
             num_indices,
 
             texture_bind_group,
-            container_texture,
         })
     }
 
