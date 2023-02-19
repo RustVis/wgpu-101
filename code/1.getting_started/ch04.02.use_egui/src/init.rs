@@ -16,6 +16,8 @@ use winit::window::{Window, WindowBuilder};
 use crate::{Error, State};
 
 fn event_loop_handler<T>(event: &Event<T>, control_flow: &mut ControlFlow, state: &mut State) {
+    state.platform_mut().handle_event(event);
+
     match event {
         Event::WindowEvent {
             ref event,

@@ -2,8 +2,11 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use std::time;
 use cgmath::Vector3;
+use egui_demo_lib::DemoWindows;
+use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
+use egui_winit_platform::{Platform, PlatformDescriptor};
+use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -14,7 +17,6 @@ use crate::Error;
 
 const ANIMATION_SPEED: f32 = 1.0;
 
-#[derive(Debug)]
 pub struct State {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -33,6 +35,10 @@ pub struct State {
     num_vertices: u32,
 
     start_time: time::Instant,
+
+    egui_platform: Platform,
+    egui_render_pass: RenderPass,
+    egui_demo_app: DemoWindows,
 }
 
 impl State {
@@ -45,6 +51,7 @@ impl State {
             wgpu::Queue,
             wgpu::SurfaceConfiguration,
             PhysicalSize<u32>,
+            wgpu::TextureFormat,
         ),
         Error,
     > {
@@ -92,7 +99,7 @@ impl State {
             .unwrap_or(surface_caps.formats[0]);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface_format,
+            format: surface_format.clone(),
             width: size.width,
             height: size.height,
             present_mode: surface_caps.present_modes[0],
@@ -101,7 +108,7 @@ impl State {
         };
         surface.configure(&device, &config);
 
-        Ok((surface, device, queue, config, size))
+        Ok((surface, device, queue, config, size, surface_format))
     }
 
     fn create_uniform_buffer(
@@ -197,8 +204,32 @@ impl State {
         render_pipeline
     }
 
+    fn create_egui_platform(
+        device: &wgpu::Device,
+        surface_format: wgpu::TextureFormat,
+        size: PhysicalSize<u32>,
+        scale_factor: f64,
+    ) -> (Platform, RenderPass, DemoWindows) {
+        // We use the egui_winit_platform crate as the platform.
+        let platform = Platform::new(PlatformDescriptor {
+            physical_width: size.width,
+            physical_height: size.height,
+            scale_factor,
+            ..Default::default()
+        });
+
+        // We use the egui_wgpu_backend crate as the render backend.
+        let render_pass = RenderPass::new(device, surface_format, 1);
+
+        // Display the demo application that ships with egui.
+        let demo_app = egui_demo_lib::DemoWindows::default();
+
+        (platform, render_pass, demo_app)
+    }
+
     pub async fn new(window: Window) -> Result<Self, Error> {
-        let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
+        let (surface, device, queue, config, size, surface_format) =
+            Self::create_surface(&window).await?;
 
         let vertex_color = Vector3::new(0.3, 0.4, 0.5);
         let vertex_color_ref = vertex_color.as_ref();
@@ -214,6 +245,9 @@ impl State {
             usage: wgpu::BufferUsages::VERTEX,
         });
         let num_vertices = VERTICES.len() as u32;
+
+        let (egui_platform, egui_render_pass, egui_demo_app) =
+            Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
 
         Ok(Self {
             window,
@@ -233,6 +267,10 @@ impl State {
             num_vertices,
 
             start_time: time::Instant::now(),
+
+            egui_platform,
+            egui_render_pass,
+            egui_demo_app,
         })
     }
 
@@ -242,6 +280,10 @@ impl State {
 
     pub fn window(&self) -> &Window {
         &self.window
+    }
+
+    pub fn platform_mut(&mut self) -> &mut Platform {
+        &mut self.egui_platform
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -258,6 +300,9 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        self.egui_platform
+            .update_time(self.start_time.elapsed().as_secs_f64());
+
         let dt = self.start_time.elapsed();
         let dt = ANIMATION_SPEED * dt.as_secs_f32();
         self.vertex_color.x = dt.sin();
@@ -265,9 +310,11 @@ impl State {
         // log::info!("vertex color: {}:{}", self.vertex_color.x, self.vertex_color.y);
         let vertex_color_ref: &[f32; 3] = self.vertex_color.as_ref();
 
-        self
-            .queue
-            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(vertex_color_ref));
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(vertex_color_ref),
+        );
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -275,12 +322,14 @@ impl State {
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
 
+        // Draw triangle.
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -304,6 +353,35 @@ impl State {
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
             render_pass.draw(0..self.num_vertices, 0..1);
+        }
+
+        // Draw the egui UI frame.
+        {
+            self.egui_platform.begin_frame();
+            self.egui_demo_app.ui(&self.egui_platform.context());
+            let full_output = self.egui_platform.end_frame(Some(&self.window));
+            let paint_jobs = self.egui_platform.context().tessellate(full_output.shapes);
+            // Upload all resources for the GPU.
+            let screen_descriptor = ScreenDescriptor {
+                physical_width: self.config.width,
+                physical_height: self.config.height,
+                scale_factor: self.window.scale_factor() as f32,
+            };
+            let tdelta: egui::TexturesDelta = full_output.textures_delta;
+            self.egui_render_pass
+                .add_textures(&self.device, &self.queue, &tdelta)
+                .expect("add texture ok");
+            self.egui_render_pass.update_buffers(
+                &self.device,
+                &self.queue,
+                &paint_jobs,
+                &screen_descriptor,
+            );
+
+            // Record all render passes.
+            self.egui_render_pass
+                .execute(&mut encoder, &view, &paint_jobs, &screen_descriptor, None)
+                .unwrap();
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
