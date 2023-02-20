@@ -96,7 +96,7 @@ impl State {
     ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/point_list.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/line_list.wgsl").into()),
         });
 
         let render_pipeline_layout =
@@ -123,7 +123,7 @@ impl State {
                 })],
             }),
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::PointList,
+                topology: wgpu::PrimitiveTopology::LineList,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: Some(wgpu::Face::Back),

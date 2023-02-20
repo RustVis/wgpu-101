@@ -360,6 +360,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch03_02_line_list"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "ch04_01_vertex_buffer"
 version = "0.1.0"
 dependencies = [
