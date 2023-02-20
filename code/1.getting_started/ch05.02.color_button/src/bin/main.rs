@@ -2,7 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use ch04_03_color_button::{run, Error};
+use ch05_02_color_button::{run, Error};
 
 fn main() -> Result<(), Error> {
     pollster::block_on(run())

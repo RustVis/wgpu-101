@@ -1,11 +1,11 @@
 [package]
-name = "ch04_02_use_egui"
+name = "ch05_01_use_egui"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "p1_getting_started_ch04_02_use_egui"
+name = "p1_getting_started_ch05_01_use_egui"
 path = "src/bin/main.rs"
 
 [lib]

@@ -477,6 +477,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch04_03_color_button"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "cgmath",
+ "egui 0.21.0",
+ "egui_demo_lib",
+ "egui_wgpu_backend",
+ "egui_winit_platform",
+ "env_logger",
+ "epi",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,11 +1,11 @@
 [package]
-name = "ch04_03_color_button"
+name = "ch05_02_color_button"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "p1_getting_started_ch04_03_color_button"
+name = "p1_getting_started_ch05_02_color_button"
 path = "src/bin/main.rs"
 
 [lib]
