@@ -343,7 +343,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch02_03_vertex_buffer"
+name = "ch03_01_point_list"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "ch04_01_vertex_buffer"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -361,7 +378,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch02_04_index_buffer"
+name = "ch04_02_index_buffer"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -379,7 +396,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch03_01_uniform"
+name = "ch04_03_colorful_rect"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "env_logger",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "ch05_01_uniform"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -398,7 +433,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch03_02_more_properties"
+name = "ch05_02_more_properties"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -416,25 +451,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch03_03_colorful_rect"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "cfg-if",
- "env_logger",
- "log",
- "pollster",
- "thiserror",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-logger",
- "web-sys",
- "wgpu",
- "winit",
-]
-
-[[package]]
-name = "ch04_01_use_texture"
+name = "ch06_01_use_texture"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -453,7 +470,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch04_02_use_egui"
+name = "ch07_01_use_egui"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -477,7 +494,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch04_03_color_button"
+name = "ch07_02_color_button"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
