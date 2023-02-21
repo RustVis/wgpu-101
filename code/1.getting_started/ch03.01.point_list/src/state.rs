@@ -73,8 +73,7 @@ impl State {
             .formats
             .iter()
             .copied()
-            .filter(|f| f.describe().srgb)
-            .next()
+            .find(|f| f.describe().srgb)
             .unwrap_or(surface_caps.formats[0]);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -105,7 +104,7 @@ impl State {
                 bind_group_layouts: &[],
                 push_constant_ranges: &[],
             });
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -138,9 +137,7 @@ impl State {
                 alpha_to_coverage_enabled: false,
             },
             multiview: None,
-        });
-
-        render_pipeline
+        })
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {

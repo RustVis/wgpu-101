@@ -81,8 +81,7 @@ impl State {
             .formats
             .iter()
             .copied()
-            .filter(|f| f.describe().srgb)
-            .next()
+            .find(|f| f.describe().srgb)
             .unwrap_or(surface_caps.formats[0]);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -173,7 +172,7 @@ impl State {
         let texture_bytes = include_bytes!("../res/textures/container.jpg");
         //let texture_bytes = include_bytes!("../res/textures/awesome_face.png");
         let container_texture =
-            Texture::from_bytes(&device, &queue, texture_bytes, Some("container")).unwrap();
+            Texture::from_bytes(device, queue, texture_bytes, Some("container")).unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
