@@ -2,8 +2,8 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use std::time;
 use cgmath::Vector3;
+use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -265,9 +265,11 @@ impl State {
         // log::info!("vertex color: {}:{}", self.vertex_color.x, self.vertex_color.y);
         let vertex_color_ref: &[f32; 3] = self.vertex_color.as_ref();
 
-        self
-            .queue
-            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(vertex_color_ref));
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(vertex_color_ref),
+        );
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
