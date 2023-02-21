@@ -394,7 +394,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch03_04_wireless_frame"
+name = "ch03_04_wireframe_mode"
 version = "0.1.0"
 dependencies = [
  "cfg-if",
