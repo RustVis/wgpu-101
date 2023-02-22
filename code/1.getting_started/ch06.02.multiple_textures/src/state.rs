@@ -169,10 +169,12 @@ impl State {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
-        let texture_bytes = include_bytes!("../res/textures/container.jpg");
-        // let texture_bytes = include_bytes!("../res/textures/awesome_face.png");
+        let container_bytes = include_bytes!("../res/textures/container.jpg");
         let container_texture =
-            Texture::from_bytes(device, queue, texture_bytes, Some("container")).unwrap();
+            Texture::from_bytes(device, queue, container_bytes, Some("container")).unwrap();
+
+        let face_bytes = include_bytes!("../res/textures/awesome_face.png");
+        let face_texture = Texture::from_bytes(device, queue, face_bytes, Some("face")).unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -193,6 +195,22 @@ impl State {
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
                 ],
                 label: Some("texture_bind_group_layout"),
             });
@@ -207,6 +225,14 @@ impl State {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&face_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&face_texture.sampler),
                 },
             ],
             label: Some("texture_bind_group"),
