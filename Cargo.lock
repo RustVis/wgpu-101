@@ -540,6 +540,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch06_03_fire_animation"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "env_logger",
+ "image",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "ch07_01_use_egui"
 version = "0.1.0"
 dependencies = [
