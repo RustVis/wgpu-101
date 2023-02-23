@@ -168,11 +168,11 @@ impl State {
     fn create_texture(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+    ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
         let texture_bytes = include_bytes!("../res/textures/container.jpg");
         // let texture_bytes = include_bytes!("../res/textures/awesome_face.png");
         let container_texture =
-            Texture::from_bytes(device, queue, texture_bytes, Some("container")).unwrap();
+            Texture::from_bytes(device, queue, texture_bytes, Some("container"))?;
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -212,13 +212,14 @@ impl State {
             label: Some("texture_bind_group"),
         });
 
-        (texture_bind_group_layout, texture_bind_group)
+        Ok((texture_bind_group_layout, texture_bind_group))
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let (texture_bind_group_layout, texture_bind_group) = Self::create_texture(&device, &queue);
+        let (texture_bind_group_layout, texture_bind_group) =
+            Self::create_texture(&device, &queue)?;
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
