@@ -31,6 +31,7 @@ impl Texture {
         label: Option<&str>,
     ) -> Result<Self, Error> {
         let rgba = img.to_rgba8();
+        let rgba = image::imageops::flip_vertical(&rgba);
         let dimensions = img.dimensions();
 
         let size = wgpu::Extent3d {
