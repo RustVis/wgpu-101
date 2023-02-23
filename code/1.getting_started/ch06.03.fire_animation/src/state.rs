@@ -2,6 +2,8 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+use std::num::NonZeroU32;
+use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -10,6 +12,16 @@ use winit::window::Window;
 use crate::texture::Texture;
 use crate::vertex::{Vertex, INDICES, VERTICES};
 use crate::Error;
+
+//const ANIMATION_FRAMES: u32 = 120;
+const ANIMATION_FRAMES: u32 = 16;
+const ANIMATION_SPEED: f32 = 1000.0 / 16.0;
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct Uniforms {
+    pub index: u32,
+}
 
 #[derive(Debug)]
 pub struct State {
@@ -26,7 +38,11 @@ pub struct State {
     index_buffer: wgpu::Buffer,
     num_indices: u32,
 
+    uniforms: Uniforms,
+    uniform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
+
+    start_time: time::Instant,
 }
 
 impl State {
@@ -64,7 +80,7 @@ impl State {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                    features: wgpu::Features::TEXTURE_BINDING_ARRAY,
                     limits: if cfg!(target_arch = "wasm32") {
                         wgpu::Limits::downlevel_webgl2_defaults()
                     } else {
@@ -165,16 +181,34 @@ impl State {
         (vertex_buffer, index_buffer)
     }
 
-    fn create_texture(
+    fn load_texture_files(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
-        let container_bytes = include_bytes!("../res/textures/container.jpg");
-        let container_texture =
-            Texture::from_bytes(device, queue, container_bytes, Some("container")).unwrap();
+    ) -> Result<Vec<Texture>, Error> {
+        let mut textures = Vec::new();
+        for index in 1..=ANIMATION_FRAMES {
+            let name = format!("fire{index:0>3}.png");
+            let filepath = format!("./res/textures/fire/fire{index:0>3}.png");
+            let texture = Texture::from_file(device, queue, &filepath, Some(&name))?;
+            textures.push(texture);
+        }
 
-        let face_bytes = include_bytes!("../res/textures/awesome_face.png");
-        let face_texture = Texture::from_bytes(device, queue, face_bytes, Some("face")).unwrap();
+        Ok(textures)
+    }
+
+    fn create_texture_bind_group(
+        device: &wgpu::Device,
+        uniforms: Uniforms,
+        textures: &[Texture],
+    ) -> Result<(wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
+        let uniforms_ref = &[uniforms];
+        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: bytemuck::cast_slice(uniforms_ref),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let texture_count = textures.len() as u32;
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -187,64 +221,69 @@ impl State {
                             view_dimension: wgpu::TextureViewDimension::D2,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
-                        count: None,
+                        count: NonZeroU32::new(texture_count),
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
+                        count: NonZeroU32::new(texture_count),
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 2,
                         visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
                         },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 3,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
                 ],
                 label: Some("texture_bind_group_layout"),
             });
 
+        let view_list = textures
+            .iter()
+            .map(|texture| &texture.view)
+            .collect::<Vec<_>>();
+        let sampler_list = textures
+            .iter()
+            .map(|texture| &texture.sampler)
+            .collect::<Vec<_>>();
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
+                    resource: wgpu::BindingResource::TextureViewArray(&view_list),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
+                    resource: wgpu::BindingResource::SamplerArray(&sampler_list),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&face_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&face_texture.sampler),
+                    resource: uniform_buffer.as_entire_binding(),
                 },
             ],
             label: Some("texture_bind_group"),
         });
 
-        (texture_bind_group_layout, texture_bind_group)
+        Ok((
+            uniform_buffer,
+            texture_bind_group_layout,
+            texture_bind_group,
+        ))
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let (texture_bind_group_layout, texture_bind_group) = Self::create_texture(&device, &queue);
+        let fire_textures = Self::load_texture_files(&device, &queue)?;
+        let uniforms = Uniforms { index: 0 };
+        let (uniform_buffer, texture_bind_group_layout, texture_bind_group) =
+            Self::create_texture_bind_group(&device, uniforms, &fire_textures)?;
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
@@ -266,7 +305,11 @@ impl State {
             index_buffer,
             num_indices,
 
+            uniforms,
+            uniform_buffer,
             texture_bind_group,
+
+            start_time: time::Instant::now(),
         })
     }
 
@@ -291,7 +334,16 @@ impl State {
         false
     }
 
-    pub fn update(&mut self) {}
+    pub fn update(&mut self) {
+        let dt = self.start_time.elapsed();
+        let dt = ANIMATION_SPEED * dt.as_secs_f32();
+        let dt = dt as u32;
+        self.uniforms.index = dt % ANIMATION_FRAMES;
+        let uniforms_ref = &[self.uniforms];
+
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
+    }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;

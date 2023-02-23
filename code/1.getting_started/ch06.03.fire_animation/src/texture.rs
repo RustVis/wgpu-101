@@ -2,7 +2,10 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+#![allow(dead_code)]
+
 use image::GenericImageView;
+use std::path::Path;
 
 use crate::Error;
 
@@ -14,6 +17,16 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn from_file(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        filename: impl AsRef<Path>,
+        label: Option<&str>,
+    ) -> Result<Self, Error> {
+        let img = image::open(filename)?;
+        Self::from_image(device, queue, &img, label)
+    }
+
     pub fn from_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,

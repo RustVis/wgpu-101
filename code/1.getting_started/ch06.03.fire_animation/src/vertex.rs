@@ -28,25 +28,25 @@ impl Vertex {
 pub const VERTICES: &[Vertex] = &[
     // bottom left
     Vertex {
-        position: [-0.5, -0.5, 0.0],
+        position: [-1.0, -1.0, 0.0],
         color: [1.0, 0.0, 0.0],
         tex_coords: [0.0, 0.0],
     },
     // bottom right
     Vertex {
-        position: [0.5, -0.5, 0.0],
+        position: [1.0, -1.0, 0.0],
         color: [0.0, 1.0, 0.0],
         tex_coords: [1.0, 0.0],
     },
     // top right
     Vertex {
-        position: [0.5, 0.5, 0.0],
+        position: [1.0, 1.0, 0.0],
         color: [0.0, 0.0, 1.0],
         tex_coords: [1.0, 1.0],
     },
     // top left
     Vertex {
-        position: [-0.5, 0.5, 0.0],
+        position: [-1.0, 1.0, 0.0],
         color: [1.0, 1.0, 0.0],
         tex_coords: [0.0, 1.0],
     },
