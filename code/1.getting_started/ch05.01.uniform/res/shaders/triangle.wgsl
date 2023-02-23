@@ -1,8 +1,4 @@
 
-@group(0)
-@binding(0)
-var<uniform> vertex_color: vec3<f32>;
-
 // Vertex Shader
 struct VertexInput {
 	@location(0) position: vec3<f32>,
@@ -22,8 +18,12 @@ fn vs_main(
 }
 
 // Fragment Shader
+@group(0)
+@binding(0)
+var<uniform> vertex_color: vec3<f32>;
+
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+fn fs_main() -> @location(0) vec4<f32> {
 	return vec4<f32>(vertex_color, 1.0);
 }
 
