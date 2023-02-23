@@ -13,7 +13,9 @@ use crate::texture::Texture;
 use crate::vertex::{Vertex, INDICES, VERTICES};
 use crate::Error;
 
-//const ANIMATION_FRAMES: u32 = 120;
+#[cfg(not(target_arch = "wasm32"))]
+const ANIMATION_FRAMES: u32 = 120;
+#[cfg(target_arch = "wasm32")]
 const ANIMATION_FRAMES: u32 = 16;
 const ANIMATION_SPEED: f32 = 1000.0 / 16.0;
 
@@ -77,15 +79,19 @@ impl State {
                 Error::Others("Failed to get an approprivate wgpu adapter".to_owned())
             })?;
 
+        let mut limits = if cfg!(target_arch = "wasm32") {
+            wgpu::Limits::downlevel_webgl2_defaults()
+        } else {
+            wgpu::Limits::default()
+        };
+        limits.max_sampled_textures_per_shader_stage = ANIMATION_FRAMES;
+        limits.max_samplers_per_shader_stage = ANIMATION_FRAMES;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::TEXTURE_BINDING_ARRAY,
-                    limits: if cfg!(target_arch = "wasm32") {
-                        wgpu::Limits::downlevel_webgl2_defaults()
-                    } else {
-                        wgpu::Limits::default()
-                    },
+                    features: wgpu::Features::TEXTURE_BINDING_ARRAY
+                        | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY,
+                    limits,
                     label: None,
                 },
                 None,
