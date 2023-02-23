@@ -3,7 +3,6 @@
 // in the LICENSE file.
 
 use cgmath::Vector3;
-use egui_demo_lib::DemoWindows;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use std::time;
@@ -12,6 +11,7 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::frames::UserWindow;
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
 
@@ -38,7 +38,7 @@ pub struct State {
 
     egui_platform: Platform,
     egui_render_pass: RenderPass,
-    egui_demo_app: DemoWindows,
+    ui_window: UserWindow,
 }
 
 impl State {
@@ -208,7 +208,7 @@ impl State {
         surface_format: wgpu::TextureFormat,
         size: PhysicalSize<u32>,
         scale_factor: f64,
-    ) -> (Platform, RenderPass, DemoWindows) {
+    ) -> (Platform, RenderPass, UserWindow) {
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {
             physical_width: size.width,
@@ -221,7 +221,7 @@ impl State {
         let render_pass = RenderPass::new(device, surface_format, 1);
 
         // Display the demo application that ships with egui.
-        let demo_app = egui_demo_lib::DemoWindows::default();
+        let demo_app = UserWindow::default();
 
         (platform, render_pass, demo_app)
     }
@@ -245,7 +245,7 @@ impl State {
         });
         let num_vertices = VERTICES.len() as u32;
 
-        let (egui_platform, egui_render_pass, egui_demo_app) =
+        let (egui_platform, egui_render_pass, ui_window) =
             Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
 
         Ok(Self {
@@ -269,7 +269,7 @@ impl State {
 
             egui_platform,
             egui_render_pass,
-            egui_demo_app,
+            ui_window,
         })
     }
 
@@ -357,7 +357,7 @@ impl State {
         // Draw the egui UI frame.
         {
             self.egui_platform.begin_frame();
-            self.egui_demo_app.ui(&self.egui_platform.context());
+            self.ui_window.ui(&self.egui_platform.context());
             let full_output = self.egui_platform.end_frame(Some(&self.window));
             let paint_jobs = self.egui_platform.context().tessellate(full_output.shapes);
             // Upload all resources for the GPU.
