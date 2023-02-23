@@ -2,6 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+use cgmath::{Matrix4, Vector3};
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -26,6 +27,8 @@ pub struct State {
     index_buffer: wgpu::Buffer,
     num_indices: u32,
 
+    transform: Matrix4<f32>,
+    transform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
 }
 
@@ -104,7 +107,7 @@ impl State {
     ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/texture.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/transform.wgsl").into()),
         });
 
         let render_pipeline_layout =
@@ -168,7 +171,15 @@ impl State {
     fn create_texture(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
+        transform: &Matrix4<f32>,
+    ) -> Result<(wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
+        let transform_ref: &[f32; 16] = transform.as_ref();
+        let transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Transform Buffer"),
+            contents: bytemuck::cast_slice(transform_ref),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
         let container_bytes = include_bytes!("../res/textures/container.jpg");
         let container_texture =
             Texture::from_bytes(device, queue, container_bytes, Some("container"))?;
@@ -181,22 +192,32 @@ impl State {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
                         },
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Texture {
                             multisampled: false,
@@ -206,7 +227,7 @@ impl State {
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
-                        binding: 3,
+                        binding: 4,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
@@ -220,32 +241,41 @@ impl State {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
+                    resource: transform_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
+                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&face_texture.view),
+                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&face_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
                     resource: wgpu::BindingResource::Sampler(&face_texture.sampler),
                 },
             ],
             label: Some("texture_bind_group"),
         });
 
-        Ok((texture_bind_group_layout, texture_bind_group))
+        Ok((
+            transform_buffer,
+            texture_bind_group_layout,
+            texture_bind_group,
+        ))
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let (texture_bind_group_layout, texture_bind_group) =
-            Self::create_texture(&device, &queue)?;
+        let transform = Matrix4::<f32>::from_translation(Vector3::<f32>::new(0.5, -0.5, 0.0));
+        let (transform_buffer, texture_bind_group_layout, texture_bind_group) =
+            Self::create_texture(&device, &queue, &transform)?;
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
@@ -267,6 +297,8 @@ impl State {
             index_buffer,
             num_indices,
 
+            transform,
+            transform_buffer,
             texture_bind_group,
         })
     }
@@ -292,7 +324,14 @@ impl State {
         false
     }
 
-    pub fn update(&mut self) {}
+    pub fn update(&mut self) {
+        let transform_ref: &[f32; 16] = self.transform.as_ref();
+        self.queue.write_buffer(
+            &self.transform_buffer,
+            0,
+            bytemuck::cast_slice(transform_ref),
+        );
+    }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
