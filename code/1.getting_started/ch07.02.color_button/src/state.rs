@@ -2,7 +2,6 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::Vector3;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use std::time;
@@ -11,11 +10,9 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
-use crate::frames::UserWindow;
+use crate::frames::ColorWindow;
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
-
-const ANIMATION_SPEED: f32 = 1.0;
 
 pub struct State {
     surface: wgpu::Surface,
@@ -25,7 +22,6 @@ pub struct State {
     size: PhysicalSize<u32>,
     window: Window,
 
-    vertex_color: Vector3<f32>,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
 
@@ -38,7 +34,7 @@ pub struct State {
 
     egui_platform: Platform,
     egui_render_pass: RenderPass,
-    ui_window: UserWindow,
+    ui_window: ColorWindow,
 }
 
 impl State {
@@ -208,7 +204,7 @@ impl State {
         surface_format: wgpu::TextureFormat,
         size: PhysicalSize<u32>,
         scale_factor: f64,
-    ) -> (Platform, RenderPass, UserWindow) {
+    ) -> (Platform, RenderPass, ColorWindow) {
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {
             physical_width: size.width,
@@ -221,17 +217,19 @@ impl State {
         let render_pass = RenderPass::new(device, surface_format, 1);
 
         // Display the demo application that ships with egui.
-        let demo_app = UserWindow::default();
+        let ui_window = ColorWindow::default();
 
-        (platform, render_pass, demo_app)
+        (platform, render_pass, ui_window)
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size, surface_format) =
             Self::create_surface(&window).await?;
 
-        let vertex_color = Vector3::new(0.3, 0.4, 0.5);
-        let vertex_color_ref = vertex_color.as_ref();
+        let (egui_platform, egui_render_pass, ui_window) =
+            Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
+
+        let vertex_color_ref = ui_window.color().as_ref();
 
         let (uniform_buffer, uniform_bind_group_layout, uniform_bind_group) =
             Self::create_uniform_buffer(&device, vertex_color_ref);
@@ -245,9 +243,6 @@ impl State {
         });
         let num_vertices = VERTICES.len() as u32;
 
-        let (egui_platform, egui_render_pass, ui_window) =
-            Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
-
         Ok(Self {
             window,
             surface,
@@ -256,7 +251,6 @@ impl State {
             config,
             size,
 
-            vertex_color,
             uniform_buffer,
             uniform_bind_group,
 
@@ -302,12 +296,7 @@ impl State {
         self.egui_platform
             .update_time(self.start_time.elapsed().as_secs_f64());
 
-        let dt = self.start_time.elapsed();
-        let dt = ANIMATION_SPEED * dt.as_secs_f32();
-        self.vertex_color.x = dt.sin();
-        self.vertex_color.y = dt.cos();
-        // log::info!("vertex color: {}:{}", self.vertex_color.x, self.vertex_color.y);
-        let vertex_color_ref: &[f32; 3] = self.vertex_color.as_ref();
+        let vertex_color_ref: &[f32; 3] = self.ui_window.color().as_ref();
 
         self.queue.write_buffer(
             &self.uniform_buffer,

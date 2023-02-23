@@ -2,6 +2,10 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+#![allow(dead_code)]
+
+use cgmath::Vector3;
+
 #[derive(Debug, Clone)]
 pub struct UserWindow {
     name: String,
@@ -41,6 +45,36 @@ impl UserWindow {
                     self.age += 1;
                 }
                 ui.label(format!("Hello '{}', age {}", self.name, self.age));
+            });
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ColorWindow {
+    color: Vector3<f32>,
+    egui_color: egui::Color32,
+}
+
+impl Default for ColorWindow {
+    fn default() -> Self {
+        Self {
+            color: Vector3::new(0.3, 0.4, 0.5),
+            egui_color: egui::Color32::BLUE,
+        }
+    }
+}
+
+impl ColorWindow {
+    pub fn color(&self) -> &Vector3<f32> {
+        &self.color
+    }
+
+    pub fn ui(&mut self, ctx: &egui::Context) {
+        egui::Window::new("Color")
+            .default_width(320.0)
+            .show(ctx, |ui| {
+                ui.color_edit_button_srgba(&mut self.egui_color);
+                ui.label(format!("Hello world, color: {:?}", self.color));
             });
     }
 }
