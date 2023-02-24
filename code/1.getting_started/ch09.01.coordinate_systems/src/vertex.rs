@@ -6,15 +6,11 @@ use std::mem::size_of;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex {
-    position: [f32; 3],
-    color: [f32; 3],
-    tex_coords: [f32; 2],
-}
+pub struct Vertex([f32; 3], [f32; 2]);
 
 impl Vertex {
-    const ATTRS: [wgpu::VertexAttribute; 3] =
-        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x2];
+    const ATTRS: [wgpu::VertexAttribute; 2] =
+        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2];
 
     pub const fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
@@ -26,30 +22,42 @@ impl Vertex {
 }
 
 pub const VERTICES: &[Vertex] = &[
-    // bottom left
-    Vertex {
-        position: [-0.5, -0.5, 0.0],
-        color: [1.0, 0.0, 0.0],
-        tex_coords: [0.0, 0.0],
-    },
-    // bottom right
-    Vertex {
-        position: [0.5, -0.5, 0.0],
-        color: [0.0, 1.0, 0.0],
-        tex_coords: [1.0, 0.0],
-    },
-    // top right
-    Vertex {
-        position: [0.5, 0.5, 0.0],
-        color: [0.0, 0.0, 1.0],
-        tex_coords: [1.0, 1.0],
-    },
-    // top left
-    Vertex {
-        position: [-0.5, 0.5, 0.0],
-        color: [1.0, 1.0, 0.0],
-        tex_coords: [0.0, 1.0],
-    },
+    Vertex([-0.5, -0.5, -0.5], [0.0, 0.0]),
+    Vertex([0.5, -0.5, -0.5], [1.0, 0.0]),
+    Vertex([0.5, 0.5, -0.5], [1.0, 1.0]),
+    Vertex([0.5, 0.5, -0.5], [1.0, 1.0]),
+    Vertex([-0.5, 0.5, -0.5], [0.0, 1.0]),
+    Vertex([-0.5, -0.5, -0.5], [0.0, 0.0]),
+    Vertex([-0.5, -0.5, 0.5], [0.0, 0.0]),
+    Vertex([0.5, -0.5, 0.5], [1.0, 0.0]),
+    Vertex([0.5, 0.5, 0.5], [1.0, 1.0]),
+    Vertex([0.5, 0.5, 0.5], [1.0, 1.0]),
+    Vertex([-0.5, 0.5, 0.5], [0.0, 1.0]),
+    Vertex([-0.5, -0.5, 0.5], [0.0, 0.0]),
+    Vertex([-0.5, 0.5, 0.5], [1.0, 0.0]),
+    Vertex([-0.5, 0.5, -0.5], [1.0, 1.0]),
+    Vertex([-0.5, -0.5, -0.5], [0.0, 1.0]),
+    Vertex([-0.5, -0.5, -0.5], [0.0, 1.0]),
+    Vertex([-0.5, -0.5, 0.5], [0.0, 0.0]),
+    Vertex([-0.5, 0.5, 0.5], [1.0, 0.0]),
+    Vertex([0.5, 0.5, 0.5], [1.0, 0.0]),
+    Vertex([0.5, 0.5, -0.5], [1.0, 1.0]),
+    Vertex([0.5, -0.5, -0.5], [0.0, 1.0]),
+    Vertex([0.5, -0.5, -0.5], [0.0, 1.0]),
+    Vertex([0.5, -0.5, 0.5], [0.0, 0.0]),
+    Vertex([0.5, 0.5, 0.5], [1.0, 0.0]),
+    Vertex([-0.5, -0.5, -0.5], [0.0, 1.0]),
+    Vertex([0.5, -0.5, -0.5], [1.0, 1.0]),
+    Vertex([0.5, -0.5, 0.5], [1.0, 0.0]),
+    Vertex([0.5, -0.5, 0.5], [1.0, 0.0]),
+    Vertex([-0.5, -0.5, 0.5], [0.0, 0.0]),
+    Vertex([-0.5, -0.5, -0.5], [0.0, 1.0]),
+    Vertex([-0.5, 0.5, -0.5], [0.0, 1.0]),
+    Vertex([0.5, 0.5, -0.5], [1.0, 1.0]),
+    Vertex([0.5, 0.5, 0.5], [1.0, 0.0]),
+    Vertex([0.5, 0.5, 0.5], [1.0, 0.0]),
+    Vertex([-0.5, 0.5, 0.5], [0.0, 0.0]),
+    Vertex([-0.5, 0.5, -0.5], [0.0, 1.0]),
 ];
 
 pub const INDICES: &[u16] = &[0, 1, 3, 1, 2, 3];

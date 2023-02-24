@@ -110,7 +110,7 @@ impl State {
     ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/transform.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/coordinate.wgsl").into()),
         });
 
         let render_pipeline_layout =
