@@ -18,6 +18,7 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
     window: Window,
+
     render_pipeline: wgpu::RenderPipeline,
 }
 
@@ -126,17 +127,13 @@ impl State {
                 //topology: wgpu::PrimitiveTopology::LineStrip,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
+                cull_mode: None,
                 polygon_mode: wgpu::PolygonMode::Fill,
                 unclipped_depth: false,
                 conservative: false,
             },
             depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
+            multisample: wgpu::MultisampleState::default(),
             multiview: None,
         })
     }

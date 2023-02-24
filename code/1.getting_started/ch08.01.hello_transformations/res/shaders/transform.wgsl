@@ -25,9 +25,9 @@ fn vs_main(
 	in: VertexInput,
 ) -> VertexOutput {
 	var out: VertexOutput;
+	out.position = uniforms.transform * vec4<f32>(in.position, 1.0);
 	out.color = in.color;
 	out.tex_coords = in.tex_coords;
-	out.position = uniforms.transform * vec4<f32>(in.position, 1.0);
 	return out;
 }
 
