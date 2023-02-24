@@ -6,6 +6,7 @@ mod error;
 mod init;
 mod state;
 mod texture;
+mod uniforms;
 mod vertex;
 
 pub use self::error::Error;

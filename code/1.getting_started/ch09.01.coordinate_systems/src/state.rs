@@ -2,7 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{Deg, Matrix4, Vector3};
+use cgmath::{Deg, Matrix4, One, PerspectiveFov, Vector3};
 use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -10,7 +10,8 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::texture::Texture;
-use crate::vertex::{Vertex, INDICES, VERTICES};
+use crate::uniforms::{Uniforms, UniformsRef};
+use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
 
 #[derive(Debug)]
@@ -25,11 +26,10 @@ pub struct State {
     render_pipeline: wgpu::RenderPipeline,
 
     vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
+    num_vertices: u32,
 
-    transform: Matrix4<f32>,
-    transform_buffer: wgpu::Buffer,
+    uniforms: Uniforms,
+    uniform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
 
     start_time: time::Instant,
@@ -157,29 +157,23 @@ impl State {
         render_pipeline
     }
 
-    fn create_buffers(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer) {
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+    fn create_buffer(device: &wgpu::Device) -> wgpu::Buffer {
+        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(VERTICES),
             usage: wgpu::BufferUsages::VERTEX,
-        });
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(INDICES),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-        (vertex_buffer, index_buffer)
+        })
     }
 
     fn create_texture(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        transform: &Matrix4<f32>,
+        uniforms: &Uniforms,
     ) -> Result<(wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
-        let transform_ref: &[f32; 16] = transform.as_ref();
-        let transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Transform Buffer"),
-            contents: bytemuck::cast_slice(transform_ref),
+        let uniforms_ref: UniformsRef = uniforms.as_ref();
+        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: bytemuck::cast_slice(uniforms_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
@@ -244,7 +238,7 @@ impl State {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: transform_buffer.as_entire_binding(),
+                    resource: uniform_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
@@ -267,24 +261,43 @@ impl State {
         });
 
         Ok((
-            transform_buffer,
+            uniform_buffer,
             texture_bind_group_layout,
             texture_bind_group,
         ))
     }
 
+    fn create_uniforms(size: PhysicalSize<u32>) -> Uniforms {
+        let aspect = size.width as f32 / size.height as f32;
+        let model = Matrix4::one();
+        let view = Matrix4::from_translation(Vector3::new(0.0, 0.0, -3.0));
+        let projection = PerspectiveFov::<f32> {
+            fovy: Deg(45.0).into(),
+            aspect,
+            near: 0.1,
+            far: 100.0,
+        }
+        .into();
+
+        Uniforms {
+            model,
+            view,
+            projection,
+        }
+    }
+
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let transform = Matrix4::<f32>::from_translation(Vector3::<f32>::new(0.25, -0.25, 0.0));
-        let (transform_buffer, texture_bind_group_layout, texture_bind_group) =
-            Self::create_texture(&device, &queue, &transform)?;
+        let uniforms = Self::create_uniforms(size);
+        let (uniform_buffer, texture_bind_group_layout, texture_bind_group) =
+            Self::create_texture(&device, &queue, &uniforms)?;
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
 
-        let (vertex_buffer, index_buffer) = Self::create_buffers(&device);
-        let num_indices = INDICES.len() as u32;
+        let vertex_buffer = Self::create_buffer(&device);
+        let num_vertices = VERTICES.len() as u32;
 
         Ok(Self {
             window,
@@ -297,11 +310,10 @@ impl State {
             render_pipeline,
 
             vertex_buffer,
-            index_buffer,
-            num_indices,
+            num_vertices,
 
-            transform,
-            transform_buffer,
+            uniforms,
+            uniform_buffer,
             texture_bind_group,
 
             start_time: time::Instant::now(),
@@ -332,14 +344,11 @@ impl State {
     pub fn update(&mut self) {
         let dt = self.start_time.elapsed();
         let dt: f32 = dt.as_secs_f32();
-        let m: Matrix4<f32> = Matrix4::from_angle_z(Deg(dt.sin()));
-        self.transform = self.transform * m;
-        let transform_ref: &[f32; 16] = self.transform.as_ref();
-        self.queue.write_buffer(
-            &self.transform_buffer,
-            0,
-            bytemuck::cast_slice(transform_ref),
-        );
+        let axis: Vector3<f32> = Vector3::new(0.5, 1.0, 0.0);
+        self.uniforms.model = Matrix4::from_axis_angle(axis, Deg(dt * 50.0));
+        let uniforms_ref: UniformsRef = self.uniforms.as_ref();
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -375,8 +384,7 @@ impl State {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.draw(0..self.num_vertices, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

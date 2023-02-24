@@ -2,16 +2,18 @@
 // Vertex Shader
 struct VertexInput {
 	@location(0) position: vec3<f32>,
-	@location(2) tex_coords: vec2<f32>,
+	@location(1) tex_coords: vec2<f32>,
 }
 
 struct VertexOutput {
 	@builtin(position) position: vec4<f32>,
-	@location(1) tex_coords: vec2<f32>,
+	@location(0) tex_coords: vec2<f32>,
 };
 
 struct Uniforms {
-	@location(0) transform: mat4x4<f32>,
+	@location(0) model: mat4x4<f32>,
+	@location(1) view: mat4x4<f32>,
+	@location(2) projection: mat4x4<f32>,
 }
 
 @group(0)
@@ -24,13 +26,14 @@ fn vs_main(
 ) -> VertexOutput {
 	var out: VertexOutput;
 	out.tex_coords = in.tex_coords;
-	out.position = uniforms.transform * vec4<f32>(in.position, 1.0);
+	out.position = uniforms.projection* uniforms.view * uniforms.model * 
+		vec4<f32>(in.position, 1.0);
 	return out;
 }
 
 // Fragment Shader
 struct FragmentInput {
-	@location(1) tex_coords: vec2<f32>,
+	@location(0) tex_coords: vec2<f32>,
 };
 
 @group(0)
