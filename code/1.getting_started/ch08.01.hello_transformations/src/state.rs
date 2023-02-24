@@ -2,7 +2,8 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{Matrix4, Vector3};
+use cgmath::{Deg, Matrix4, Vector3};
+use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -30,6 +31,8 @@ pub struct State {
     transform: Matrix4<f32>,
     transform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
+
+    start_time: time::Instant,
 }
 
 impl State {
@@ -273,7 +276,7 @@ impl State {
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let transform = Matrix4::<f32>::from_translation(Vector3::<f32>::new(0.5, -0.5, 0.0));
+        let transform = Matrix4::<f32>::from_translation(Vector3::<f32>::new(0.25, -0.25, 0.0));
         let (transform_buffer, texture_bind_group_layout, texture_bind_group) =
             Self::create_texture(&device, &queue, &transform)?;
 
@@ -300,6 +303,8 @@ impl State {
             transform,
             transform_buffer,
             texture_bind_group,
+
+            start_time: time::Instant::now(),
         })
     }
 
@@ -325,6 +330,10 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        let dt = self.start_time.elapsed();
+        let dt: f32 = dt.as_secs_f32();
+        let m: Matrix4<f32> = Matrix4::from_angle_z(Deg(dt.sin()));
+        self.transform = self.transform * m;
         let transform_ref: &[f32; 16] = self.transform.as_ref();
         self.queue.write_buffer(
             &self.transform_buffer,
