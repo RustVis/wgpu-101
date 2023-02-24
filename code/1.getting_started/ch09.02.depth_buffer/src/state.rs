@@ -161,19 +161,12 @@ impl State {
         render_pipeline
     }
 
-    fn create_buffer(device: &wgpu::Device) -> wgpu::Buffer {
-        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+    fn create_buffers(device: &wgpu::Device, uniforms: &Uniforms) -> (wgpu::Buffer, wgpu::Buffer) {
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(VERTICES),
             usage: wgpu::BufferUsages::VERTEX,
-        })
-    }
-
-    fn create_texture(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        uniforms: &Uniforms,
-    ) -> Result<(wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
+        });
         let uniforms_ref: UniformsRef = uniforms.as_ref();
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -181,6 +174,14 @@ impl State {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
+        (vertex_buffer, uniform_buffer)
+    }
+
+    fn create_texture(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        uniform_buffer: &wgpu::Buffer,
+    ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
         let container_bytes = include_bytes!("../res/textures/container.jpg");
         let container_texture =
             Texture::from_bytes(device, queue, container_bytes, Some("container"))?;
@@ -264,11 +265,7 @@ impl State {
             label: Some("texture_bind_group"),
         });
 
-        Ok((
-            uniform_buffer,
-            texture_bind_group_layout,
-            texture_bind_group,
-        ))
+        Ok((texture_bind_group_layout, texture_bind_group))
     }
 
     fn create_uniforms(size: PhysicalSize<u32>) -> Uniforms {
@@ -294,14 +291,14 @@ impl State {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
         let uniforms = Self::create_uniforms(size);
-        let (uniform_buffer, texture_bind_group_layout, texture_bind_group) =
-            Self::create_texture(&device, &queue, &uniforms)?;
+        let (vertex_buffer, uniform_buffer) = Self::create_buffers(&device, &uniforms);
+        let num_vertices = VERTICES.len() as u32;
+
+        let (texture_bind_group_layout, texture_bind_group) =
+            Self::create_texture(&device, &queue, &uniform_buffer)?;
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
-
-        let vertex_buffer = Self::create_buffer(&device);
-        let num_vertices = VERTICES.len() as u32;
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
 
