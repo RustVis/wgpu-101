@@ -19,7 +19,7 @@ fn vs_main(
 	var out: VertexOutput;
 	out.position = vec4<f32>(in.position, 1.0);
 	out.color = in.color;
-	out.tex_coords = in.tex_coords;
+	out.tex_coords = vec2(in.tex_coords.x, 1.0 - in.tex_coords.y);
 	return out;
 }
 
