@@ -2,13 +2,17 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::uniforms::{Uniforms, UniformsRef};
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
+
+const ANIMATION_SPEED: f32 = 1.0;
 
 #[derive(Debug)]
 pub struct State {
@@ -19,10 +23,16 @@ pub struct State {
     size: PhysicalSize<u32>,
     window: Window,
 
+    uniforms: Uniforms,
+    uniform_buffer: wgpu::Buffer,
+    uniform_bind_group: wgpu::BindGroup,
+
     render_pipeline: wgpu::RenderPipeline,
 
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
+
+    start_time: time::Instant,
 }
 
 impl State {
@@ -93,9 +103,51 @@ impl State {
         Ok((surface, device, queue, config, size))
     }
 
+    fn create_uniform_buffer(
+        device: &wgpu::Device,
+        uniforms: &Uniforms,
+    ) -> (wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup) {
+        let uniforms_ref: UniformsRef = uniforms.as_ref();
+
+        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: bytemuck::cast_slice(uniforms_ref),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+        let uniform_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Uniform Bind Group Layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Uniform Bind Group"),
+            layout: &uniform_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+        });
+
+        (
+            uniform_buffer,
+            uniform_bind_group_layout,
+            uniform_bind_group,
+        )
+    }
+
     fn create_render_pipeline(
         device: &wgpu::Device,
         config: &wgpu::SurfaceConfiguration,
+        uniform_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -105,7 +157,7 @@ impl State {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[uniform_bind_group_layout],
                 push_constant_ranges: &[],
             });
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -145,7 +197,13 @@ impl State {
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let render_pipeline = Self::create_render_pipeline(&device, &config);
+        let uniforms = Uniforms::default();
+        let (uniform_buffer, uniform_bind_group_layout, uniform_bind_group) =
+            Self::create_uniform_buffer(&device, &uniforms);
+
+        let render_pipeline =
+            Self::create_render_pipeline(&device, &config, &uniform_bind_group_layout);
+
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(VERTICES),
@@ -160,9 +218,17 @@ impl State {
             queue,
             config,
             size,
+
+            uniforms,
+            uniform_buffer,
+            uniform_bind_group,
+
             render_pipeline,
+
             vertex_buffer,
             num_vertices,
+
+            start_time: time::Instant::now(),
         })
     }
 
@@ -187,7 +253,16 @@ impl State {
         false
     }
 
-    pub fn update(&mut self) {}
+    pub fn update(&mut self) {
+        let dt = self.start_time.elapsed();
+        let dt = ANIMATION_SPEED * dt.as_secs_f32();
+        self.uniforms.color0.x = dt.sin();
+        self.uniforms.color0.y = dt.cos();
+        let uniforms_ref: UniformsRef = self.uniforms.as_ref();
+
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
+    }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
@@ -221,6 +296,7 @@ impl State {
 
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
             render_pass.draw(0..self.num_vertices, 0..1);
         }
 
