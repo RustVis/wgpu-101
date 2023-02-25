@@ -1,11 +1,11 @@
 [package]
-name = "ch06_03_fire_animation"
+name = "ch06_04_fire_animation"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "p1_getting_started_ch06_03_fire_animation"
+name = "p1_getting_started_ch06_04_fire_animation"
 path = "src/bin/main.rs"
 
 [lib]
