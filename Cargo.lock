@@ -599,6 +599,7 @@ dependencies = [
  "egui_winit_platform",
  "env_logger",
  "epi",
+ "instant",
  "log",
  "pollster",
  "thiserror",
