@@ -67,7 +67,7 @@ pub async fn run() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let window: Window = WindowBuilder::new()
         .with_title("Use egui")
-        .with_inner_size(PhysicalSize::new(800, 600))
+        .with_inner_size(PhysicalSize::new(1920, 1080))
         .build(&event_loop)?;
 
     #[cfg(target_arch = "wasm32")]
