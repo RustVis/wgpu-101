@@ -2,8 +2,9 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::Vector3;
-use std::time;
+use cgmath::Vector4;
+//use std::time::Instant;
+use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -12,7 +13,7 @@ use winit::window::Window;
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
 
-const ANIMATION_SPEED: f32 = 1.0;
+const ANIMATION_SPEED: f32 = 1.8;
 
 #[derive(Debug)]
 pub struct State {
@@ -23,7 +24,7 @@ pub struct State {
     size: PhysicalSize<u32>,
     window: Window,
 
-    vertex_color: Vector3<f32>,
+    vertex_color: Vector4<f32>,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
 
@@ -32,7 +33,7 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
 
-    start_time: time::Instant,
+    start_time: Instant,
 }
 
 impl State {
@@ -105,7 +106,7 @@ impl State {
 
     fn create_uniform_buffer(
         device: &wgpu::Device,
-        color: &[f32; 3],
+        color: &[f32; 4],
     ) -> (wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup) {
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -195,7 +196,7 @@ impl State {
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let vertex_color = Vector3::new(0.3, 0.4, 0.5);
+        let vertex_color = Vector4::new(0.3, 0.4, 0.5, 1.0);
         let vertex_color_ref = vertex_color.as_ref();
 
         let (uniform_buffer, uniform_bind_group_layout, uniform_bind_group) =
@@ -227,7 +228,7 @@ impl State {
             vertex_buffer,
             num_vertices,
 
-            start_time: time::Instant::now(),
+            start_time: Instant::now(),
         })
     }
 
@@ -257,7 +258,7 @@ impl State {
         let dt = ANIMATION_SPEED * dt.as_secs_f32();
         self.vertex_color.x = dt.sin();
         self.vertex_color.y = dt.cos();
-        let vertex_color_ref: &[f32; 3] = self.vertex_color.as_ref();
+        let vertex_color_ref: &[f32; 4] = self.vertex_color.as_ref();
 
         self.queue.write_buffer(
             &self.uniform_buffer,
