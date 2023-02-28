@@ -10,6 +10,7 @@
     body {
       margin: 0;
     }
+
     canvas {
       background-color: black;
     }
@@ -17,11 +18,11 @@
 </head>
 
 <body>
-  <div id="wasm-container">
-  </div>
-  <script type="module">
-    import("./pkg/ch07_01_use_egui.js").then(module => module.default());
-  </script>
+<div id="wasm-container">
+</div>
+<script type="module">
+  import("./pkg/ch07_01_use_egui.js").then(module => module.default());
+</script>
 </body>
 
 </html>
