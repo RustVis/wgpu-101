@@ -63,7 +63,7 @@ pub async fn run() -> Result<(), Error> {
         }
     }
 
-    log::info!("Creating a new with with size 800x600");
+    log::info!("Creating a new with with size 1920x1080");
     let event_loop = EventLoop::new();
     let window: Window = WindowBuilder::new()
         .with_title("Use egui")

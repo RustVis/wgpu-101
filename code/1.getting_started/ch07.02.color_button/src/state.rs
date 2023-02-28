@@ -4,13 +4,14 @@
 
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
-use std::time;
+use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::frames::ColorWindow;
+use crate::uniforms::{Uniforms, UniformsRef};
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
 
@@ -22,6 +23,7 @@ pub struct State {
     size: PhysicalSize<u32>,
     window: Window,
 
+    uniforms: Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
 
@@ -30,7 +32,7 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
 
-    start_time: time::Instant,
+    start_time: Instant,
 
     egui_platform: Platform,
     egui_render_pass: RenderPass,
@@ -108,11 +110,11 @@ impl State {
 
     fn create_uniform_buffer(
         device: &wgpu::Device,
-        color: &[f32; 3],
+        uniforms_ref: UniformsRef,
     ) -> (wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup) {
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
-            contents: bytemuck::cast_slice(color),
+            contents: bytemuck::cast_slice(uniforms_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let uniform_bind_group_layout =
@@ -225,10 +227,11 @@ impl State {
         let (egui_platform, egui_render_pass, ui_window) =
             Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
 
-        let vertex_color_ref = ui_window.color().as_ref();
+        let uniforms = Uniforms::from_color(*ui_window.color());
+        let uniforms_ref = uniforms.as_ref();
 
         let (uniform_buffer, uniform_bind_group_layout, uniform_bind_group) =
-            Self::create_uniform_buffer(&device, vertex_color_ref);
+            Self::create_uniform_buffer(&device, uniforms_ref);
 
         let render_pipeline =
             Self::create_render_pipeline(&device, &config, &uniform_bind_group_layout);
@@ -247,6 +250,7 @@ impl State {
             config,
             size,
 
+            uniforms,
             uniform_buffer,
             uniform_bind_group,
 
@@ -255,7 +259,7 @@ impl State {
             vertex_buffer,
             num_vertices,
 
-            start_time: time::Instant::now(),
+            start_time: Instant::now(),
 
             egui_platform,
             egui_render_pass,
@@ -292,13 +296,12 @@ impl State {
         self.egui_platform
             .update_time(self.start_time.elapsed().as_secs_f64());
 
-        let vertex_color_ref: &[f32; 3] = self.ui_window.color().as_ref();
+        self.uniforms.color = *self.ui_window.color();
 
-        self.queue.write_buffer(
-            &self.uniform_buffer,
-            0,
-            bytemuck::cast_slice(vertex_color_ref),
-        );
+        let uniforms_ref = self.uniforms.as_ref();
+
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {

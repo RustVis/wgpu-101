@@ -6,6 +6,7 @@ mod error;
 mod frames;
 mod init;
 mod state;
+mod uniforms;
 mod vertex;
 
 pub use self::error::Error;
