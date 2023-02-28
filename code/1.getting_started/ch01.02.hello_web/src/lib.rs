@@ -43,7 +43,7 @@ pub async fn run() -> Result<(), Error> {
     log::info!("Creating a new with with size 800x600");
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_title("Hello Web")
+        .with_title("Hello WebGPU")
         .with_inner_size(PhysicalSize::new(800, 600))
         .build(&event_loop)?;
 
