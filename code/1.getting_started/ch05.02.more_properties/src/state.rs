@@ -2,7 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use std::time;
+use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -32,7 +32,7 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
 
-    start_time: time::Instant,
+    start_time: Instant,
 }
 
 impl State {
@@ -119,7 +119,7 @@ impl State {
                 label: Some("Uniform Bind Group Layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    visibility: wgpu::ShaderStages::VERTEX,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -228,7 +228,7 @@ impl State {
             vertex_buffer,
             num_vertices,
 
-            start_time: time::Instant::now(),
+            start_time: Instant::now(),
         })
     }
 
@@ -258,6 +258,11 @@ impl State {
         let dt = ANIMATION_SPEED * dt.as_secs_f32();
         self.uniforms.color0.x = dt.sin();
         self.uniforms.color0.y = dt.cos();
+        self.uniforms.color1.x = (dt + 0.32).sin();
+        self.uniforms.color1.y = (dt + 0.32).cos();
+        self.uniforms.color2.x = (dt + 0.67).sin();
+        self.uniforms.color2.y = (dt + 0.67).cos();
+
         let uniforms_ref: UniformsRef = self.uniforms.as_ref();
 
         self.queue
