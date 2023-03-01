@@ -636,6 +636,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch07_03_show_fps"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "cgmath",
+ "egui 0.21.0",
+ "egui_wgpu_backend",
+ "egui_winit_platform",
+ "env_logger",
+ "epi",
+ "instant",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "ch08_01_hello_transformations"
 version = "0.1.0"
 dependencies = [
