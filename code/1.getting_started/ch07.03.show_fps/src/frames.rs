@@ -76,3 +76,22 @@ impl ColorWindow {
             });
     }
 }
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct FpsWindow {
+    fps: u32,
+}
+
+impl FpsWindow {
+    pub fn set_fps(&mut self, fps: u32) {
+        self.fps = fps;
+    }
+
+    pub fn ui(&mut self, ctx: &egui::Context) {
+        egui::Window::new("FPS")
+            .default_width(220.0)
+            .show(ctx, |ui| {
+                ui.heading(format!("FPS: {}", self.fps));
+            });
+    }
+}
