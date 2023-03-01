@@ -5,6 +5,7 @@
 #![allow(dead_code)]
 
 use cgmath::Vector3;
+use instant::Instant;
 
 #[derive(Debug, Clone)]
 pub struct UserWindow {
@@ -77,14 +78,39 @@ impl ColorWindow {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct FpsWindow {
     fps: u32,
+    frames: u32,
+    timer: Instant,
+}
+
+impl Default for FpsWindow {
+    fn default() -> Self {
+        Self {
+            fps: 0,
+            frames: 0,
+            timer: Instant::now(),
+        }
+    }
 }
 
 impl FpsWindow {
-    pub fn set_fps(&mut self, fps: u32) {
-        self.fps = fps;
+    pub fn update(&mut self) {
+        let dt = self.timer.elapsed().as_secs_f64();
+        let fps = (f64::from(self.frames) / dt).round() as u32;
+        //log::info!("fps: {fps}");
+        if dt > 1.0 {
+            self.frames = 0;
+            self.timer = Instant::now();
+            self.fps = fps;
+        }
+        self.frames += 1;
+    }
+
+    #[must_use]
+    pub const fn fps(&self) -> u32 {
+        self.fps
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) {

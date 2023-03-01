@@ -36,7 +36,7 @@ pub struct State {
 
     egui_platform: Platform,
     egui_render_pass: RenderPass,
-    ui_window: ColorWindow,
+    color_window: ColorWindow,
 }
 
 impl State {
@@ -214,20 +214,19 @@ impl State {
         // We use the egui_wgpu_backend crate as the render backend.
         let render_pass = RenderPass::new(device, surface_format, 1);
 
-        // Display the demo application that ships with egui.
-        let ui_window = ColorWindow::default();
+        let color_window = ColorWindow::default();
 
-        (platform, render_pass, ui_window)
+        (platform, render_pass, color_window)
     }
 
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size, surface_format) =
             Self::create_surface(&window).await?;
 
-        let (egui_platform, egui_render_pass, ui_window) =
+        let (egui_platform, egui_render_pass, color_window) =
             Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
 
-        let uniforms = Uniforms::from_color(*ui_window.color());
+        let uniforms = Uniforms::from_color(*color_window.color());
         let uniforms_ref = uniforms.as_ref();
 
         let (uniform_buffer, uniform_bind_group_layout, uniform_bind_group) =
@@ -263,7 +262,7 @@ impl State {
 
             egui_platform,
             egui_render_pass,
-            ui_window,
+            color_window,
         })
     }
 
@@ -296,7 +295,7 @@ impl State {
         let dt = self.start_time.elapsed().as_secs_f64();
         self.egui_platform.update_time(dt);
 
-        self.uniforms.color = *self.ui_window.color();
+        self.uniforms.color = *self.color_window.color();
         let uniforms_ref = self.uniforms.as_ref();
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
@@ -343,7 +342,7 @@ impl State {
         // Draw the egui UI frame.
         {
             self.egui_platform.begin_frame();
-            self.ui_window.ui(&self.egui_platform.context());
+            self.color_window.ui(&self.egui_platform.context());
             let full_output = self.egui_platform.end_frame(Some(&self.window));
             let paint_jobs = self.egui_platform.context().tessellate(full_output.shapes);
             // Upload all resources for the GPU.
