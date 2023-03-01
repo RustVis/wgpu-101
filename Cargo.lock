@@ -740,6 +740,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch10_01_camera"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "cgmath",
+ "env_logger",
+ "image",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
