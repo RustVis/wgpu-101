@@ -352,8 +352,7 @@ impl State {
     pub fn update(&mut self) {
         let dt = self.start_time.elapsed();
         let dt: f32 = dt.as_secs_f32();
-        let axis: Vector3<f32> = Vector3::new(0.5, 1.0, 0.0);
-        self.uniforms.model = Matrix4::from_axis_angle(axis, Deg(dt * 50.0));
+        self.uniforms.model = Matrix4::from_angle_y(Deg(dt * 50.0));
         let uniforms_ref: UniformsRef = self.uniforms.as_ref();
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
