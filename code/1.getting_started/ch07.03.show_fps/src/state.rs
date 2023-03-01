@@ -33,6 +33,8 @@ pub struct State {
     num_vertices: u32,
 
     start_time: Instant,
+    fps_time: Instant,
+    frames: u32,
 
     egui_platform: Platform,
     egui_render_pass: RenderPass,
@@ -99,8 +101,9 @@ impl State {
             format: surface_format,
             width: size.width,
             height: size.height,
-            present_mode: surface_caps.present_modes[0],
-            alpha_mode: surface_caps.alpha_modes[0],
+            // Immediate mode is not supported on linux wayland desktop.
+            present_mode: wgpu::PresentMode::Immediate,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
             view_formats: vec![],
         };
         surface.configure(&device, &config);
@@ -260,6 +263,8 @@ impl State {
             num_vertices,
 
             start_time: Instant::now(),
+            fps_time: Instant::now(),
+            frames: 0,
 
             egui_platform,
             egui_render_pass,
@@ -293,13 +298,20 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        self.egui_platform
-            .update_time(self.start_time.elapsed().as_secs_f64());
+        let dt = self.fps_time.elapsed().as_secs_f64();
+        let fps: u32 = (f64::from(self.frames) / dt).round() as u32;
+        log::info!("fps: {fps}");
+        if dt > 1.0 {
+            self.frames = 0;
+            self.fps_time = Instant::now();
+        }
+        self.frames += 1;
+
+        let dt = self.start_time.elapsed().as_secs_f64();
+        self.egui_platform.update_time(dt);
 
         self.uniforms.color = *self.ui_window.color();
-
         let uniforms_ref = self.uniforms.as_ref();
-
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
     }

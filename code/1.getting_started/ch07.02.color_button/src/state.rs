@@ -293,13 +293,11 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        self.egui_platform
-            .update_time(self.start_time.elapsed().as_secs_f64());
+        let dt = self.start_time.elapsed().as_secs_f64();
+        self.egui_platform.update_time(dt);
 
         self.uniforms.color = *self.ui_window.color();
-
         let uniforms_ref = self.uniforms.as_ref();
-
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
     }
