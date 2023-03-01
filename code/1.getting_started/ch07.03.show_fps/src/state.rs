@@ -100,9 +100,14 @@ impl State {
             format: surface_format,
             width: size.width,
             height: size.height,
-            // Immediate mode is not supported on linux wayland desktop.
-            present_mode: wgpu::PresentMode::Immediate,
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+            // Immediate mode is not supported on linux wayland desktop or webgpu.
+            present_mode: if cfg!(target_arch = "wasm32") {
+                wgpu::PresentMode::Fifo
+                //surface_caps.present_modes[0]
+            } else {
+                wgpu::PresentMode::Immediate
+            },
+            alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
         };
         surface.configure(&device, &config);
