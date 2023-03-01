@@ -63,11 +63,11 @@ pub async fn run() -> Result<(), Error> {
         }
     }
 
-    log::info!("Creating a new with with size 1920x1080");
+    log::info!("Creating a new with with size 800x600");
     let event_loop = EventLoop::new();
     let window: Window = WindowBuilder::new()
         .with_title("Color Button")
-        .with_inner_size(PhysicalSize::new(1920, 1080))
+        .with_inner_size(PhysicalSize::new(800, 600))
         .build(&event_loop)?;
 
     #[cfg(target_arch = "wasm32")]
