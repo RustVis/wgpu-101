@@ -2,13 +2,14 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{Deg, Matrix4, One, PerspectiveFov, Vector3};
+use cgmath::{Deg, Matrix4, One, PerspectiveFov, Rad, Vector3};
 use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::cubes::CUBE_POSITIONS;
 use crate::texture::Texture;
 use crate::uniforms::{Uniforms, UniformsRef};
 use crate::vertex::{Vertex, VERTICES};
@@ -349,14 +350,7 @@ impl State {
         false
     }
 
-    pub fn update(&mut self) {
-        let dt = self.start_time.elapsed();
-        let dt: f32 = dt.as_secs_f32();
-        self.uniforms.model = Matrix4::from_angle_y(Deg(dt * 50.0));
-        let uniforms_ref: UniformsRef = self.uniforms.as_ref();
-        self.queue
-            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
-    }
+    pub fn update(&mut self) {}
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
@@ -398,7 +392,28 @@ impl State {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.draw(0..self.num_vertices, 0..1);
+
+            let dt = self.start_time.elapsed();
+            let dt: f32 = dt.as_secs_f32();
+
+            for (index, pos) in CUBE_POSITIONS.iter().enumerate() {
+                log::info!("index: {index}");
+                let translate_model = Matrix4::from_translation(*pos);
+                let angle: f32 = 0.5 * (index + 1) as f32;
+                let radian = Rad(angle) * dt;
+                let rotate_model = Matrix4::from_angle_x(Rad(0.5) * (1.15 - dt.sin()))
+                    * Matrix4::from_angle_y(radian)
+                    * Matrix4::from_angle_z(Rad(0.0));
+                self.uniforms.model = translate_model * rotate_model;
+                let uniforms_ref: UniformsRef = self.uniforms.as_ref();
+                self.queue.write_buffer(
+                    &self.uniform_buffer,
+                    0,
+                    bytemuck::cast_slice(uniforms_ref),
+                );
+
+                render_pass.draw(0..self.num_vertices, 0..1);
+            }
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

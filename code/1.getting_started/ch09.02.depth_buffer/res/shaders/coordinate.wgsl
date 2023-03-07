@@ -25,7 +25,7 @@ fn vs_main(
 	in: VertexInput,
 ) -> VertexOutput {
 	var out: VertexOutput;
-	out.position = uniforms.projection* uniforms.view * uniforms.model * 
+	out.position = uniforms.projection * uniforms.view * uniforms.model *
 		vec4<f32>(in.position, 1.0);
 	out.tex_coords = in.tex_coords;
 	return out;
