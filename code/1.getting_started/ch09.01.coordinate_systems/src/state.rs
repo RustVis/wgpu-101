@@ -2,7 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{Deg, Matrix4, One, PerspectiveFov, Vector3};
+use cgmath::{Deg, Matrix4, One, PerspectiveFov, Rad, Vector3};
 use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -340,8 +340,10 @@ impl State {
     pub fn update(&mut self) {
         let dt = self.start_time.elapsed();
         let dt: f32 = dt.as_secs_f32();
-        let axis: Vector3<f32> = Vector3::new(0.0, 1.0, 0.0);
-        self.uniforms.model = Matrix4::from_axis_angle(axis, Deg(dt * 50.0));
+        self.uniforms.model = Matrix4::from_angle_x(Rad(0.5) * dt)
+            * Matrix4::from_angle_y(Rad(1.0) * dt)
+            * Matrix4::from_angle_z(Rad(0.0));
+
         let uniforms_ref: UniformsRef = self.uniforms.as_ref();
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
