@@ -4,7 +4,7 @@
 
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, One, Point3, Vector3};
 use std::mem;
-use winit::event::{KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event::{KeyboardInput, MouseScrollDelta, TouchPhase, VirtualKeyCode, WindowEvent};
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
@@ -25,6 +25,7 @@ pub struct Camera {
     zoom_far: f32,
 
     keyboard_speed: f32,
+    scroll_speed: f32,
 
     uniform: CameraUniform,
 }
@@ -42,6 +43,7 @@ impl Camera {
             zoom_far: 100.0,
 
             keyboard_speed: 0.05,
+            scroll_speed: 0.08,
 
             uniform: CameraUniform::default(),
         };
@@ -69,6 +71,24 @@ impl Camera {
                     },
                 ..
             } => self.process_key_event(*keycode),
+            WindowEvent::MouseWheel {
+                delta,
+                phase: TouchPhase::Moved,
+                ..
+            } => self.process_wheel_event(*delta),
+            _ => false,
+        }
+    }
+
+    fn process_wheel_event(&mut self, delta: MouseScrollDelta) -> bool {
+        match delta {
+            MouseScrollDelta::LineDelta(_horizontal, vertical) => {
+                let forward = self.target - self.eye;
+                let forward_norm = forward.normalize();
+                self.eye += (forward_norm * self.scroll_speed) * vertical;
+                self.update_uniform();
+                true
+            }
             _ => false,
         }
     }
