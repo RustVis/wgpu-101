@@ -10,23 +10,12 @@ struct VertexOutput {
 	@location(0) tex_coords: vec2<f32>,
 };
 
-struct Uniforms {
-	@location(0) model: mat4x4<f32>,
-	@location(1) view: mat4x4<f32>,
-	@location(2) projection: mat4x4<f32>,
-}
-
-@group(0)
-@binding(0)
-var<uniform> uniforms: Uniforms;
-
 @vertex
 fn vs_main(
 	in: VertexInput,
 ) -> VertexOutput {
 	var out: VertexOutput;
-	out.position = uniforms.projection* uniforms.view * uniforms.model * 
-		vec4<f32>(in.position, 1.0);
+	out.position = vec4<f32>(in.position, 1.0);
 	out.tex_coords = in.tex_coords;
 	return out;
 }
@@ -37,19 +26,19 @@ struct FragmentInput {
 };
 
 @group(0)
-@binding(1)
+@binding(0)
 var container_texture: texture_2d<f32>;
 
 @group(0)
-@binding(2)
+@binding(1)
 var container_sampler: sampler;
 
 @group(0)
-@binding(3)
+@binding(2)
 var face_texture: texture_2d<f32>;
 
 @group(0)
-@binding(4)
+@binding(3)
 var face_sampler: sampler;
 
 @fragment

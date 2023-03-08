@@ -2,15 +2,12 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{Deg, Matrix4, One, PerspectiveFov, Vector3};
-use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::texture::Texture;
-use crate::uniforms::{Uniforms, UniformsRef};
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
 
@@ -28,13 +25,9 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
 
-    uniforms: Uniforms,
-    uniform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
 
     depth_texture: Texture,
-
-    start_time: Instant,
 }
 
 impl State {
@@ -112,7 +105,7 @@ impl State {
     ) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/coordinate.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/camera.wgsl").into()),
         });
 
         let render_pipeline_layout =
@@ -161,26 +154,18 @@ impl State {
         render_pipeline
     }
 
-    fn create_buffers(device: &wgpu::Device, uniforms: &Uniforms) -> (wgpu::Buffer, wgpu::Buffer) {
+    fn create_buffers(device: &wgpu::Device) -> wgpu::Buffer {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(VERTICES),
             usage: wgpu::BufferUsages::VERTEX,
         });
-        let uniforms_ref: UniformsRef = uniforms.as_ref();
-        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Uniform Buffer"),
-            contents: bytemuck::cast_slice(uniforms_ref),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
-
-        (vertex_buffer, uniform_buffer)
+        vertex_buffer
     }
 
     fn create_texture(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        uniform_buffer: &wgpu::Buffer,
     ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
         let container_bytes = include_bytes!("../res/textures/container.jpg");
         let container_texture =
@@ -194,33 +179,23 @@ impl State {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 2,
                         visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 3,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Texture {
                             multisampled: false,
                             view_dimension: wgpu::TextureViewDimension::D2,
@@ -229,7 +204,7 @@ impl State {
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
-                        binding: 4,
+                        binding: 3,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
@@ -243,22 +218,18 @@ impl State {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: uniform_buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
                     resource: wgpu::BindingResource::TextureView(&container_texture.view),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 2,
+                    binding: 1,
                     resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 3,
+                    binding: 2,
                     resource: wgpu::BindingResource::TextureView(&face_texture.view),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 4,
+                    binding: 3,
                     resource: wgpu::BindingResource::Sampler(&face_texture.sampler),
                 },
             ],
@@ -268,34 +239,14 @@ impl State {
         Ok((texture_bind_group_layout, texture_bind_group))
     }
 
-    fn create_uniforms(size: PhysicalSize<u32>) -> Uniforms {
-        let aspect = size.width as f32 / size.height as f32;
-        let model = Matrix4::one();
-        let view = Matrix4::from_translation(Vector3::new(0.0, 0.0, -3.0));
-        let projection = PerspectiveFov::<f32> {
-            fovy: Deg(45.0).into(),
-            aspect,
-            near: 0.1,
-            far: 100.0,
-        }
-        .into();
-
-        Uniforms {
-            model,
-            view,
-            projection,
-        }
-    }
-
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let uniforms = Self::create_uniforms(size);
-        let (vertex_buffer, uniform_buffer) = Self::create_buffers(&device, &uniforms);
+        let vertex_buffer = Self::create_buffers(&device);
         let num_vertices = VERTICES.len() as u32;
 
         let (texture_bind_group_layout, texture_bind_group) =
-            Self::create_texture(&device, &queue, &uniform_buffer)?;
+            Self::create_texture(&device, &queue)?;
 
         let bind_group_layouts = [&texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
@@ -315,13 +266,9 @@ impl State {
             vertex_buffer,
             num_vertices,
 
-            uniforms,
-            uniform_buffer,
             texture_bind_group,
 
             depth_texture,
-
-            start_time: Instant::now(),
         })
     }
 
@@ -350,12 +297,7 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        let dt = self.start_time.elapsed();
-        let dt: f32 = dt.as_secs_f32();
-        self.uniforms.model = Matrix4::from_angle_y(Deg(dt * 50.0));
-        let uniforms_ref: UniformsRef = self.uniforms.as_ref();
-        self.queue
-            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
+        // Do nothing
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
