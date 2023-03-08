@@ -3,7 +3,7 @@
 // in the LICENSE file.
 
 use cgmath::{Deg, Matrix4, Vector3};
-use std::time;
+use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -32,7 +32,7 @@ pub struct State {
     transform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
 
-    start_time: time::Instant,
+    start_time: Instant,
 }
 
 impl State {
@@ -300,7 +300,7 @@ impl State {
             transform_buffer,
             texture_bind_group,
 
-            start_time: time::Instant::now(),
+            start_time: Instant::now(),
         })
     }
 

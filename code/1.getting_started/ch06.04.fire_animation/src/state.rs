@@ -2,8 +2,8 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+use instant::Instant;
 use std::num::NonZeroU32;
-use std::time;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -44,7 +44,7 @@ pub struct State {
     uniform_buffer: wgpu::Buffer,
     texture_bind_group: wgpu::BindGroup,
 
-    start_time: time::Instant,
+    start_time: Instant,
 }
 
 impl State {
@@ -311,7 +311,7 @@ impl State {
             uniform_buffer,
             texture_bind_group,
 
-            start_time: time::Instant::now(),
+            start_time: Instant::now(),
         })
     }
 

@@ -3,7 +3,6 @@
 // in the LICENSE file.
 
 use cgmath::Vector4;
-//use std::time::Instant;
 use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;

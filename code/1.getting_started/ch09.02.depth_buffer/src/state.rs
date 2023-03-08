@@ -3,7 +3,7 @@
 // in the LICENSE file.
 
 use cgmath::{Deg, Matrix4, One, PerspectiveFov, Rad, Vector3};
-use std::time;
+use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -34,7 +34,7 @@ pub struct State {
 
     depth_texture: Texture,
 
-    start_time: time::Instant,
+    start_time: Instant,
 }
 
 impl State {
@@ -321,7 +321,7 @@ impl State {
 
             depth_texture,
 
-            start_time: time::Instant::now(),
+            start_time: Instant::now(),
         })
     }
 
