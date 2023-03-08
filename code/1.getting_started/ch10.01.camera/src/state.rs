@@ -7,6 +7,7 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::camera::Camera;
 use crate::texture::Texture;
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
@@ -25,8 +26,11 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
 
-    texture_bind_group: wgpu::BindGroup,
+    camera: Camera,
+    camera_buffer: wgpu::Buffer,
+    camera_bind_group: wgpu::BindGroup,
 
+    texture_bind_group: wgpu::BindGroup,
     depth_texture: Texture,
 }
 
@@ -163,6 +167,54 @@ impl State {
         vertex_buffer
     }
 
+    fn create_camera(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        size: PhysicalSize<u32>,
+    ) -> Result<(Camera, wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
+        let eye_pos = (0.0, 1.0, 2.0).into();
+        let aspect = size.width as f32 / size.height as f32;
+        let camera = Camera::new(eye_pos, aspect);
+
+        let uniform_ref = camera.uniform_ref();
+        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Camera Uniform Buffer"),
+            contents: bytemuck::cast_slice(uniform_ref),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+            label: Some("camera_bind_group"),
+        });
+
+        Ok((
+            camera,
+            camera_buffer,
+            camera_bind_group_layout,
+            camera_bind_group,
+        ))
+    }
+
     fn create_texture(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -245,10 +297,13 @@ impl State {
         let vertex_buffer = Self::create_buffers(&device);
         let num_vertices = VERTICES.len() as u32;
 
+        let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
+            Self::create_camera(&device, &queue, size)?;
+
         let (texture_bind_group_layout, texture_bind_group) =
             Self::create_texture(&device, &queue)?;
 
-        let bind_group_layouts = [&texture_bind_group_layout];
+        let bind_group_layouts = [&camera_bind_group_layout, &texture_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
@@ -266,8 +321,11 @@ impl State {
             vertex_buffer,
             num_vertices,
 
-            texture_bind_group,
+            camera,
+            camera_buffer,
+            camera_bind_group,
 
+            texture_bind_group,
             depth_texture,
         })
     }
@@ -338,7 +396,8 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
+            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.draw(0..self.num_vertices, 0..1);
         }
