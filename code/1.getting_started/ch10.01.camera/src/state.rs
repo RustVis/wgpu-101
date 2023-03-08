@@ -169,7 +169,6 @@ impl State {
 
     fn create_camera(
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
         size: PhysicalSize<u32>,
     ) -> Result<(Camera, wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
         let eye_pos = (0.0, 1.0, 2.0).into();
@@ -298,7 +297,7 @@ impl State {
         let num_vertices = VERTICES.len() as u32;
 
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
-            Self::create_camera(&device, &queue, size)?;
+            Self::create_camera(&device, size)?;
 
         let (texture_bind_group_layout, texture_bind_group) =
             Self::create_texture(&device, &queue)?;
@@ -350,12 +349,16 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, _event: &WindowEvent) -> bool {
-        false
+    pub fn input(&mut self, event: &WindowEvent) -> bool {
+        self.camera.process_event(event)
     }
 
     pub fn update(&mut self) {
-        // Do nothing
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(self.camera.uniform_ref()),
+        );
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {

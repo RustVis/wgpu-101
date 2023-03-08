@@ -2,8 +2,9 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{perspective, Deg, Matrix4, One, Point3, Vector3};
+use cgmath::{perspective, Deg, InnerSpace, Matrix4, One, Point3, Vector3};
 use std::mem;
+use winit::event::{KeyboardInput, VirtualKeyCode, WindowEvent};
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
@@ -23,6 +24,8 @@ pub struct Camera {
     zoom_near: f32,
     zoom_far: f32,
 
+    keyboard_speed: f32,
+
     uniform: CameraUniform,
 }
 
@@ -38,6 +41,8 @@ impl Camera {
             zoom_near: 0.1,
             zoom_far: 100.0,
 
+            keyboard_speed: 0.05,
+
             uniform: CameraUniform::default(),
         };
         instance.update_uniform();
@@ -50,12 +55,55 @@ impl Camera {
         self.uniform.view_proj = OPENGL_TO_WGPU_MATRIX * proj * view;
     }
 
-    pub fn uniform(&self) -> &CameraUniform {
-        &self.uniform
-    }
-
     pub fn uniform_ref(&self) -> CameraUniformRef {
         self.uniform.as_ref()
+    }
+
+    pub fn process_event(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        virtual_keycode: Some(keycode),
+                        ..
+                    },
+                ..
+            } => self.process_key_event(*keycode),
+            _ => false,
+        }
+    }
+
+    fn process_key_event(&mut self, keycode: VirtualKeyCode) -> bool {
+        let forward = self.target - self.eye;
+        let forward_norm = forward.normalize();
+        let forward_mag = forward.magnitude();
+        let right = forward_norm.cross(self.up);
+
+        match keycode {
+            VirtualKeyCode::A | VirtualKeyCode::Left => {
+                self.eye =
+                    self.target - (forward - right * self.keyboard_speed).normalize() * forward_mag;
+                self.update_uniform();
+                true
+            }
+            VirtualKeyCode::D | VirtualKeyCode::Right => {
+                self.eye =
+                    self.target - (forward + right * self.keyboard_speed).normalize() * forward_mag;
+                self.update_uniform();
+                true
+            }
+            VirtualKeyCode::S | VirtualKeyCode::Down => {
+                self.eye -= forward_norm * self.keyboard_speed;
+                self.update_uniform();
+                true
+            }
+            VirtualKeyCode::W | VirtualKeyCode::Up => {
+                self.eye += forward_norm * self.keyboard_speed;
+                self.update_uniform();
+                true
+            }
+            _ => false,
+        }
     }
 }
 
