@@ -4,7 +4,11 @@
 
 use cgmath::{perspective, Deg, InnerSpace, Matrix4, One, Point3, Vector3};
 use std::mem;
-use winit::event::{KeyboardInput, MouseScrollDelta, TouchPhase, VirtualKeyCode, WindowEvent};
+use winit::dpi::PhysicalPosition;
+use winit::event::{
+    ElementState, KeyboardInput, MouseButton, MouseScrollDelta, TouchPhase, VirtualKeyCode,
+    WindowEvent,
+};
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
@@ -26,6 +30,9 @@ pub struct Camera {
 
     keyboard_speed: f32,
     scroll_speed: f32,
+    mouse_pressed: bool,
+    cursor_speed: f32,
+    last_cursor_pos: PhysicalPosition<f64>,
 
     uniform: CameraUniform,
 }
@@ -44,6 +51,9 @@ impl Camera {
 
             keyboard_speed: 0.05,
             scroll_speed: 0.08,
+            mouse_pressed: false,
+            cursor_speed: 0.08,
+            last_cursor_pos: PhysicalPosition::new(0.0, 0.0),
 
             uniform: CameraUniform::default(),
         };
@@ -76,8 +86,33 @@ impl Camera {
                 phase: TouchPhase::Moved,
                 ..
             } => self.process_wheel_event(*delta),
+            WindowEvent::CursorMoved { position, .. } => self.process_cursor_move_event(*position),
+            WindowEvent::MouseInput {
+                state,
+                button: MouseButton::Left,
+                ..
+            } => {
+                self.mouse_pressed = *state == ElementState::Pressed;
+                true
+            }
             _ => false,
         }
+    }
+
+    fn process_cursor_move_event(&mut self, position: PhysicalPosition<f64>) -> bool {
+        if !self.mouse_pressed {
+            return false;
+        }
+        log::info!("pos: {position:?}");
+
+        let forward = self.target - self.eye;
+        let forward_norm = forward.normalize();
+        let forward_mag = forward.magnitude();
+        let right = forward_norm.cross(self.up);
+        self.eye = self.target
+            - (forward - position.x as f32 * right * self.cursor_speed).normalize() * forward_mag;
+        self.update_uniform();
+        true
     }
 
     fn process_wheel_event(&mut self, delta: MouseScrollDelta) -> bool {
@@ -89,7 +124,14 @@ impl Camera {
                 self.update_uniform();
                 true
             }
-            _ => false,
+            MouseScrollDelta::PixelDelta(pos) => {
+                // TODO(Shaohua): rotate view
+                let forward = self.target - self.eye;
+                let forward_norm = forward.normalize();
+                self.eye += (forward_norm * self.scroll_speed) * pos.y as f32;
+                self.update_uniform();
+                true
+            }
         }
     }
 
