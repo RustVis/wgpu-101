@@ -33,6 +33,7 @@ pub struct Camera {
     mouse_pressed: bool,
     cursor_speed: f32,
     last_cursor_pos: PhysicalPosition<f64>,
+    first_cursor_moved: bool,
 
     uniform: CameraUniform,
 }
@@ -52,8 +53,9 @@ impl Camera {
             keyboard_speed: 0.05,
             scroll_speed: 0.08,
             mouse_pressed: false,
-            cursor_speed: 0.08,
+            cursor_speed: 0.02,
             last_cursor_pos: PhysicalPosition::new(0.0, 0.0),
+            first_cursor_moved: false,
 
             uniform: CameraUniform::default(),
         };
@@ -93,6 +95,7 @@ impl Camera {
                 ..
             } => {
                 self.mouse_pressed = *state == ElementState::Pressed;
+                self.first_cursor_moved = !self.mouse_pressed;
                 true
             }
             _ => false,
@@ -103,14 +106,30 @@ impl Camera {
         if !self.mouse_pressed {
             return false;
         }
-        log::info!("pos: {position:?}");
+        if !self.first_cursor_moved {
+            self.first_cursor_moved = true;
+            self.last_cursor_pos = position;
+        }
 
-        let forward = self.target - self.eye;
-        let forward_norm = forward.normalize();
-        let forward_mag = forward.magnitude();
-        let right = forward_norm.cross(self.up);
-        self.eye = self.target
-            - (forward - position.x as f32 * right * self.cursor_speed).normalize() * forward_mag;
+        let x_offset = (position.x - self.last_cursor_pos.x) as f32;
+        let y_offset = (self.last_cursor_pos.y - position.y) as f32;
+        self.last_cursor_pos = position;
+
+        {
+            let forward = self.target - self.eye;
+            let forward_norm = forward.normalize();
+            let forward_mag = forward.magnitude();
+            let right = forward_norm.cross(self.up);
+            self.eye = self.target
+                - (forward + x_offset * right * self.cursor_speed).normalize() * forward_mag;
+        }
+
+        {
+            let forward = self.target - self.eye;
+            let forward_mag = forward.magnitude();
+            self.eye = self.target
+                - (forward + y_offset * self.up * self.cursor_speed).normalize() * forward_mag;
+        }
         self.update_uniform();
         true
     }
