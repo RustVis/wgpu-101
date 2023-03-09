@@ -8,7 +8,7 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::camera::Camera;
-use crate::geometry::{create_cube, GeometryData};
+use crate::geometry::create_sphere;
 use crate::texture::Texture;
 use crate::vertex::Vertex;
 use crate::Error;
@@ -24,7 +24,6 @@ pub struct State {
 
     render_pipeline: wgpu::RenderPipeline,
 
-    cube_data: GeometryData,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
@@ -147,8 +146,11 @@ impl State {
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: None,
-                //polygon_mode: wgpu::PolygonMode::Fill,
-                polygon_mode: wgpu::PolygonMode::Line,
+                polygon_mode: if cfg!(target_arch = "wasm32") {
+                    wgpu::PolygonMode::Fill
+                } else {
+                    wgpu::PolygonMode::Line
+                },
                 unclipped_depth: false,
                 conservative: false,
             },
@@ -166,9 +168,9 @@ impl State {
         render_pipeline
     }
 
-    fn create_vertex(device: &wgpu::Device) -> (GeometryData, wgpu::Buffer, wgpu::Buffer, u32) {
-        let cube_data = create_cube();
-        let vertices = cube_data.vertex_data();
+    fn create_vertex(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer, u32) {
+        let geometry_data = create_sphere();
+        let vertices = geometry_data.vertex_data();
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(&vertices),
@@ -176,12 +178,12 @@ impl State {
         });
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&cube_data.indices),
+            contents: bytemuck::cast_slice(&geometry_data.indices16),
             usage: wgpu::BufferUsages::INDEX,
         });
-        let num_indices = cube_data.indices.len() as u32;
+        let num_indices = geometry_data.indices16.len() as u32;
 
-        (cube_data, vertex_buffer, index_buffer, num_indices)
+        (vertex_buffer, index_buffer, num_indices)
     }
 
     fn create_camera(
@@ -310,7 +312,7 @@ impl State {
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let (cube_data, vertex_buffer, index_buffer, num_indices) = Self::create_vertex(&device);
+        let (vertex_buffer, index_buffer, num_indices) = Self::create_vertex(&device);
 
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
@@ -333,7 +335,6 @@ impl State {
 
             render_pipeline,
 
-            cube_data,
             vertex_buffer,
             index_buffer,
             num_indices,
