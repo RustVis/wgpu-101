@@ -3,6 +3,7 @@
 // in the LICENSE file.
 
 mod error;
+mod frames;
 mod init;
 mod state;
 mod texture;

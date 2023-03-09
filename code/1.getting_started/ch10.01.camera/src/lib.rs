@@ -4,6 +4,7 @@
 
 mod camera;
 mod error;
+mod frames;
 mod init;
 mod state;
 mod texture;
