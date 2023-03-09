@@ -50,8 +50,8 @@ impl Camera {
             zoom_near: 0.1,
             zoom_far: 100.0,
 
-            keyboard_speed: 0.05,
-            scroll_speed: 0.08,
+            keyboard_speed: 0.10,
+            scroll_speed: 0.12,
             mouse_pressed: false,
             cursor_speed: 0.02,
             last_cursor_pos: PhysicalPosition::new(0.0, 0.0),
