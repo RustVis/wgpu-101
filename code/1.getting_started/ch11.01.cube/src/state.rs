@@ -8,8 +8,9 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::camera::Camera;
+use crate::geometry::{create_cube, GeometryData};
 use crate::texture::Texture;
-use crate::vertex::{Vertex, VERTICES};
+use crate::vertex::Vertex;
 use crate::Error;
 
 #[derive(Debug)]
@@ -23,8 +24,10 @@ pub struct State {
 
     render_pipeline: wgpu::RenderPipeline,
 
+    cube_data: GeometryData,
     vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
+    index_buffer: wgpu::Buffer,
+    num_indices: u32,
 
     camera: Camera,
     camera_buffer: wgpu::Buffer,
@@ -158,13 +161,22 @@ impl State {
         render_pipeline
     }
 
-    fn create_buffers(device: &wgpu::Device) -> wgpu::Buffer {
+    fn create_vertex(device: &wgpu::Device) -> (GeometryData, wgpu::Buffer, wgpu::Buffer, u32) {
+        let cube_data = create_cube();
+        let vertices = cube_data.vertex_data();
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
+            contents: bytemuck::cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
-        vertex_buffer
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(&cube_data.indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        let num_indices = cube_data.indices.len() as u32;
+
+        (cube_data, vertex_buffer, index_buffer, num_indices)
     }
 
     fn create_camera(
@@ -293,8 +305,7 @@ impl State {
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let vertex_buffer = Self::create_buffers(&device);
-        let num_vertices = VERTICES.len() as u32;
+        let (cube_data, vertex_buffer, index_buffer, num_indices) = Self::create_vertex(&device);
 
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
@@ -317,8 +328,10 @@ impl State {
 
             render_pipeline,
 
+            cube_data,
             vertex_buffer,
-            num_vertices,
+            index_buffer,
+            num_indices,
 
             camera,
             camera_buffer,
@@ -402,7 +415,8 @@ impl State {
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.draw(0..self.num_vertices, 0..1);
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
