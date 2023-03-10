@@ -404,5 +404,105 @@ pub fn create_cylinder_detail(
 #[inline]
 #[must_use]
 pub fn create_cone() -> GeometryData {
-    create_cylinder_detail(1.0, 2.0, 20, 10, 1.0, 1.0)
+    create_cone_detail(1.0, 2.0, 20)
+}
+
+pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData {
+    let mut geo_data = GeometryData::default();
+
+    let vertex_count = (3 * slices + 1) as usize;
+    let index_count = (6 * slices) as usize;
+
+    geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
+
+    if index_count > 65535 {
+        geo_data.indices32.resize(index_count, 0);
+    } else {
+        geo_data.indices16.resize(index_count, 0);
+    }
+
+    let h2 = height / 2.0;
+    let mut theta;
+    let per_theta = 2.0 * PI / slices as f32;
+
+    // Side face
+    {
+        let mut i_index: usize = 0;
+        let mut v_index: usize = 0;
+
+        for _i in 0..slices {
+            geo_data.vertices[v_index] = [0.0, h2, 0.0];
+            geo_data.tex_coords[v_index] = [0.5, 0.5];
+            v_index += 1;
+        }
+
+        for i in 0..slices {
+            theta = i as f32 * per_theta;
+            geo_data.vertices[v_index] = [radius * theta.cos(), -h2, radius * theta.sin()];
+            geo_data.tex_coords[v_index] = [theta.cos() / 2.0 + 0.5, theta.sin() / 2.0 + 0.5];
+            v_index += 1;
+        }
+
+        // Indices
+        for i in 0..slices {
+            if index_count > INDICES32_THRESHOLD {
+                geo_data.indices32[i_index] = i;
+                i_index += 1;
+                geo_data.indices32[i_index] = slices + (i + 1) % slices;
+                i_index += 1;
+                geo_data.indices32[i_index] = slices + i % slices;
+                i_index += 1;
+            } else {
+                geo_data.indices16[i_index] = i as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (slices + (i + 1) % slices) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (slices + i % slices) as u16;
+                i_index += 1;
+            }
+        }
+    }
+
+    // Bottom side
+    {
+        let mut i_index = (3 * slices) as usize;
+        let mut v_index = (2 * slices) as usize;
+
+        // Top point
+        for i in 0..slices {
+            theta = i as f32 * per_theta;
+
+            geo_data.vertices[v_index] = [radius * theta.cos(), -h2, radius * theta.sin()];
+            geo_data.tex_coords[v_index] = [theta.cos() / 2.0 + 0.5, theta.sin() / 2.0 + 0.5];
+            v_index += 1;
+        }
+
+        // Center point of bottom circular.
+        geo_data.vertices[v_index] = [0.0, -h2, 0.0];
+        geo_data.tex_coords[v_index] = [0.5, 0.5];
+        //v_index += 1;
+
+        // Indices
+        let offset = 2 * slices;
+        for i in 0..slices {
+            if index_count > INDICES32_THRESHOLD {
+                geo_data.indices32[i_index] = offset + slices;
+                i_index += 1;
+                geo_data.indices32[i_index] = offset + i % slices;
+                i_index += 1;
+                geo_data.indices32[i_index] = offset + (i + 1) % slices;
+                i_index += 1;
+            } else {
+                geo_data.indices16[i_index] = (offset + slices) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (offset + i % slices) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (offset + (i + 1) % slices) as u16;
+                i_index += 1;
+            }
+        }
+    }
+
+    geo_data
 }
