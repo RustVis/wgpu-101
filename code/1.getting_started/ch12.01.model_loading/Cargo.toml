@@ -1,0 +1,45 @@
+[package]
+name = "ch12_01_model_loading"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "p1_getting_started_ch12_01_model_loading"
+path = "src/bin/main.rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+bytemuck = { version = "1.13.1", features = ["derive"] }
+cfg-if = "1.0.0"
+cgmath = "0.18.0"
+egui = { version = "0.21.0", features = ["bytemuck"] }
+egui_winit_platform = "0.18.0"
+epi = "0.17.0"
+image = { version = "0.24.5", default-features = false, features = ["jpeg", "png"] }
+log = "0.4.17"
+pollster = "0.3.0"
+thiserror = "1.0.39"
+winit = "0.28.2"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+egui_wgpu_backend = "0.22.0"
+instant = "0.1.12"
+env_logger = "0.10.0"
+wgpu = "0.15.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+egui_wgpu_backend = { version = "0.22.0", features = ["web"] }
+instant = { version = "0.1.12", features = ["stdweb"] }
+wasm-bindgen = "0.2.84"
+wasm-bindgen-futures = "0.4.34"
+wasm-logger = "0.2.0"
+web-sys = { version = "0.3.61", features = [
+  "Document",
+  "Element",
+  "HtmlCanvasElement",
+  "Window",
+]}
+wgpu = { version = "0.15.1", features = ["webgl"] }
