@@ -8,7 +8,7 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::camera::Camera;
-use crate::geometry::create_sphere;
+use crate::geometry::create_cylinder;
 use crate::texture::Texture;
 use crate::vertex::Vertex;
 use crate::Error;
@@ -169,7 +169,7 @@ impl State {
     }
 
     fn create_vertex(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer, u32) {
-        let geometry_data = create_sphere();
+        let geometry_data = create_cylinder();
         let vertices = geometry_data.vertex_data();
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),

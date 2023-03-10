@@ -233,3 +233,164 @@ pub fn create_sphere_detail(radius: f32, levels: u32, slices: u32) -> GeometryDa
 
     geo_data
 }
+
+#[inline]
+#[must_use]
+pub fn create_cylinder() -> GeometryData {
+    create_cylinder_detail(1.0, 2.0, 20, 10, 1.0, 1.0)
+}
+
+pub fn create_cylinder_detail(
+    radius: f32,
+    height: f32,
+    slices: u32,
+    stacks: u32,
+    tex_u: f32,
+    tex_v: f32,
+) -> GeometryData {
+    let mut geo_data = GeometryData::default();
+
+    let vertex_count: usize = ((slices + 1) * (stacks + 3) + 2) as usize;
+    let index_count: usize = (6 * slices * (stacks + 1)) as usize;
+
+    let slices_f32 = slices as f32;
+    let stacks_f32 = stacks as f32;
+
+    geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
+
+    if index_count > INDICES32_THRESHOLD {
+        geo_data.indices32.resize(index_count, 0);
+    } else {
+        geo_data.indices16.resize(index_count, 0);
+    }
+
+    let h2 = height / 2.0;
+    let mut theta;
+    let per_theta = 2.0 * PI / slices_f32;
+    let stack_height = height / stacks_f32;
+
+    // Out surface
+    {
+        let mut v_index: usize = 0;
+        for i in 0..stacks {
+            let y: f32 = -h2 + i as f32 * stack_height;
+            for j in 0..=slices {
+                theta = j as f32 * per_theta;
+                let u = theta / 2.0 / PI;
+                let v = 1.0 - i as f32 / stacks_f32;
+
+                geo_data.vertices[v_index] = [radius * theta.cos(), y, radius * (theta).sin()];
+                geo_data.tex_coords[v_index] = [u * tex_u, v * tex_v];
+                v_index += 1;
+            }
+        }
+
+        let mut i_index = 0;
+        for i in 0..stacks {
+            for j in 0..slices {
+                if index_count > INDICES32_THRESHOLD {
+                    geo_data.indices32[i_index] = i * (slices + 1) + j;
+                    i_index += 1;
+                    geo_data.indices32[i_index] = (i + 1) * (slices + 1) + j;
+                    i_index += 1;
+                    geo_data.indices32[i_index] = (i + 1) * (slices + 1) + j + 1;
+                    i_index += 1;
+
+                    geo_data.indices32[i_index] = i * (slices + 1) + j;
+                    i_index += 1;
+                    geo_data.indices32[i_index] = (i + 1) * (slices + 1) + j + 1;
+                    i_index += 1;
+                    geo_data.indices32[i_index] = i * (slices + 1) + j + 1;
+                    i_index += 1;
+                } else {
+                    geo_data.indices16[i_index] = (i * (slices + 1) + j) as u16;
+                    i_index += 1;
+                    geo_data.indices16[i_index] = ((i + 1) * (slices + 1) + j) as u16;
+                    i_index += 1;
+                    geo_data.indices16[i_index] = ((i + 1) * (slices + 1) + j + 1) as u16;
+                    i_index += 1;
+
+                    geo_data.indices16[i_index] = (i * (slices + 1) + j) as u16;
+                    i_index += 1;
+                    geo_data.indices16[i_index] = ((i + 1) * (slices + 1) + j + 1) as u16;
+                    i_index += 1;
+                    geo_data.indices16[i_index] = (i * (slices + 1) + j + 1) as u16;
+                    i_index += 1;
+                }
+            }
+        }
+    }
+
+    // Top and bottom
+    {
+        let mut v_index = ((slices + 1) * (stacks + 1)) as usize;
+        let mut i_index = (6 * slices * stacks) as usize;
+        let mut offset = v_index as u32;
+
+        geo_data.vertices[v_index] = [0.0, h2, 0.0];
+        geo_data.tex_coords[v_index] = [0.5, 0.5];
+        v_index += 1;
+
+        for i in 0..=slices {
+            theta = i as f32 * per_theta;
+            let u = theta.cos() * radius / height + 0.5;
+            let v = theta.sin() * radius / height + 0.5;
+            geo_data.vertices[v_index] = [radius * theta.cos(), h2, radius * theta.sin()];
+            geo_data.tex_coords[v_index] = [u, v];
+            v_index += 1;
+        }
+
+        geo_data.vertices[v_index] = [0.0, -h2, 0.0];
+        geo_data.tex_coords[v_index] = [0.5, 0.5];
+        v_index += 1;
+
+        for i in 0..=slices {
+            theta = i as f32 * per_theta;
+            let u = theta.cos() * radius / height + 0.5;
+            let v = theta.sin() * radius / height + 0.5;
+            geo_data.vertices[v_index] = [radius * theta.cos(), -h2, radius * theta.sin()];
+            geo_data.tex_coords[v_index] = [u, v];
+            v_index += 1;
+        }
+
+        for i in 1..=slices {
+            if index_count > INDICES32_THRESHOLD {
+                geo_data.indices32[i_index] = offset;
+                i_index += 1;
+                geo_data.indices32[i_index] = offset + i % (slices + 1) + 1;
+                i_index += 1;
+                geo_data.indices32[i_index] = offset + i;
+                i_index += 1;
+            } else {
+                geo_data.indices16[i_index] = offset as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (offset + i % (slices + 1) + 1) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (offset + i) as u16;
+                i_index += 1;
+            }
+        }
+
+        offset += slices + 2;
+        for i in 1..=slices {
+            if index_count > INDICES32_THRESHOLD {
+                geo_data.indices32[i_index] = offset;
+                i_index += 1;
+                geo_data.indices32[i_index] = offset + i;
+                i_index += 1;
+                geo_data.indices32[i_index] = offset + i % (slices + 1) + 1;
+                i_index += 1;
+            } else {
+                geo_data.indices16[i_index] = offset as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (offset + i) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (offset + i % (slices + 1) + 1) as u16;
+                i_index += 1;
+            }
+        }
+    }
+
+    geo_data
+}
