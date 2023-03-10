@@ -543,3 +543,101 @@ pub fn create_plane_detail(width: f32, depth: f32, tex_u: f32, tex_v: f32) -> Ge
 
     geo_data
 }
+
+#[inline]
+#[must_use]
+pub fn create_grid() -> GeometryData {
+    create_grid_detail(20.0, 20.0, 20, 20, 1.0, 1.0)
+}
+
+pub fn create_grid_detail(
+    grid_width: f32,
+    grid_depth: f32,
+    slices_x: u32,
+    slices_y: u32,
+    tex_u: f32,
+    tex_v: f32,
+) -> GeometryData {
+    let mut geo_data = GeometryData::default();
+
+    let vertex_count = ((slices_x + 1) * (slices_y + 1)) as usize;
+    let index_count = (6 * slices_x * slices_y) as usize;
+
+    geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
+
+    if index_count > INDICES32_THRESHOLD {
+        geo_data.indices32.resize(index_count, 0);
+    } else {
+        geo_data.indices16.resize(index_count, 0);
+    }
+
+    let mut v_index: usize = 0;
+    let mut i_index: usize = 0;
+
+    let slice_width = grid_width / slices_x as f32;
+    let slice_depth = grid_depth / slices_y as f32;
+    let left_bottom_x = -grid_width / 2.0;
+    let left_bottom_z = -grid_depth / 2.0;
+    let mut pos_x;
+    let mut pos_z;
+    let slice_tex_width = tex_u / slices_x as f32;
+    let slice_tex_depth = tex_v / slices_y as f32;
+
+    // Vertices
+    //  __ __
+    // | /| /|
+    // |/_|/_|
+    // | /| /|
+    // |/_|/_|
+    for z in 0..=slices_y {
+        let z = z as f32;
+        pos_z = left_bottom_z + z * slice_depth;
+
+        for x in 0..=slices_x {
+            let x = x as f32;
+            pos_x = left_bottom_x + x * slice_width;
+
+            geo_data.vertices[v_index] = [pos_x, 0.0, pos_z];
+            geo_data.tex_coords[v_index] = [x * slice_tex_width, tex_v - z * slice_tex_depth];
+            v_index += 1;
+        }
+    }
+
+    // Indices
+    for i in 0..slices_y {
+        for j in 0..slices_x {
+            if index_count > INDICES32_THRESHOLD {
+                geo_data.indices32[i_index] = i * (slices_x + 1) + j;
+                i_index += 1;
+                geo_data.indices32[i_index] = (i + 1) * (slices_x + 1) + j;
+                i_index += 1;
+                geo_data.indices32[i_index] = (i + 1) * (slices_x + 1) + j + 1;
+                i_index += 1;
+
+                geo_data.indices32[i_index] = (i + 1) * (slices_x + 1) + j + 1;
+                i_index += 1;
+                geo_data.indices32[i_index] = i * (slices_x + 1) + j + 1;
+                i_index += 1;
+                geo_data.indices32[i_index] = i * (slices_x + 1) + j;
+                i_index += 1;
+            } else {
+                geo_data.indices16[i_index] = (i * (slices_x + 1) + j) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = ((i + 1) * (slices_x + 1) + j) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = ((i + 1) * (slices_x + 1) + j + 1) as u16;
+                i_index += 1;
+
+                geo_data.indices16[i_index] = ((i + 1) * (slices_x + 1) + j + 1) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (i * (slices_x + 1) + j + 1) as u16;
+                i_index += 1;
+                geo_data.indices16[i_index] = (i * (slices_x + 1) + j) as u16;
+                i_index += 1;
+            }
+        }
+    }
+
+    geo_data
+}
