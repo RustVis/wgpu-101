@@ -273,20 +273,20 @@ pub fn create_cylinder_detail(
     // Out surface
     {
         let mut v_index: usize = 0;
-        for i in 0..stacks {
+        for i in 0..=stacks {
             let y: f32 = -h2 + i as f32 * stack_height;
             for j in 0..=slices {
                 theta = j as f32 * per_theta;
                 let u = theta / 2.0 / PI;
                 let v = 1.0 - i as f32 / stacks_f32;
 
-                geo_data.vertices[v_index] = [radius * theta.cos(), y, radius * (theta).sin()];
+                geo_data.vertices[v_index] = [radius * theta.cos(), y, radius * theta.sin()];
                 geo_data.tex_coords[v_index] = [u * tex_u, v * tex_v];
                 v_index += 1;
             }
         }
 
-        let mut i_index = 0;
+        let mut i_index: usize = 0;
         for i in 0..stacks {
             for j in 0..slices {
                 if index_count > INDICES32_THRESHOLD {
@@ -328,10 +328,12 @@ pub fn create_cylinder_detail(
         let mut i_index = (6 * slices * stacks) as usize;
         let mut offset = v_index as u32;
 
+        // Center point of top circular
         geo_data.vertices[v_index] = [0.0, h2, 0.0];
         geo_data.tex_coords[v_index] = [0.5, 0.5];
         v_index += 1;
 
+        // Top circular
         for i in 0..=slices {
             theta = i as f32 * per_theta;
             let u = theta.cos() * radius / height + 0.5;
@@ -341,10 +343,12 @@ pub fn create_cylinder_detail(
             v_index += 1;
         }
 
+        // Center point of bottom circular
         geo_data.vertices[v_index] = [0.0, -h2, 0.0];
         geo_data.tex_coords[v_index] = [0.5, 0.5];
         v_index += 1;
 
+        // Bottom circular
         for i in 0..=slices {
             theta = i as f32 * per_theta;
             let u = theta.cos() * radius / height + 0.5;
@@ -354,6 +358,7 @@ pub fn create_cylinder_detail(
             v_index += 1;
         }
 
+        // Indices of top circular
         for i in 1..=slices {
             if index_count > INDICES32_THRESHOLD {
                 geo_data.indices32[i_index] = offset;
@@ -372,6 +377,7 @@ pub fn create_cylinder_detail(
             }
         }
 
+        // Indices of bottom circular
         offset += slices + 2;
         for i in 1..=slices {
             if index_count > INDICES32_THRESHOLD {
