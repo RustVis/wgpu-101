@@ -506,3 +506,40 @@ pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData
 
     geo_data
 }
+
+#[inline]
+#[must_use]
+pub fn create_plane() -> GeometryData {
+    create_plane_detail(10.0, 10.0, 1.0, 1.0)
+}
+
+pub fn create_plane_detail(width: f32, depth: f32, tex_u: f32, tex_v: f32) -> GeometryData {
+    let mut geo_data = GeometryData::default();
+
+    geo_data.vertices.resize(4, [0.0, 0.0, 0.0]);
+    geo_data.tex_coords.resize(4, [0.0, 0.0]);
+
+    let w2 = width / 2.0;
+    let d2 = depth / 2.0;
+
+    let mut v_index: usize = 0;
+    geo_data.vertices[v_index] = [-w2, 0.0, -d2];
+    geo_data.tex_coords[v_index] = [0.0, tex_v];
+    v_index += 1;
+
+    geo_data.vertices[v_index] = [-w2, 0.0, d2];
+    geo_data.tex_coords[v_index] = [0.0, 0.0];
+    v_index += 1;
+
+    geo_data.vertices[v_index] = [w2, 0.0, d2];
+    geo_data.tex_coords[v_index] = [tex_u, 0.0];
+    v_index += 1;
+
+    geo_data.vertices[v_index] = [w2, 0.0, -d2];
+    geo_data.tex_coords[v_index] = [tex_u, tex_v];
+    //v_index += 1;
+
+    geo_data.indices16 = vec![0, 1, 2, 2, 3, 0];
+
+    geo_data
+}
