@@ -8,9 +8,8 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::camera::Camera;
-use crate::geometry::create_grid;
+use crate::scenes::{BoxScene, LightScene};
 use crate::texture::Texture;
-use crate::vertex::Vertex;
 use crate::Error;
 
 #[derive(Debug)]
@@ -22,11 +21,8 @@ pub struct State {
     size: PhysicalSize<u32>,
     window: Window,
 
-    render_pipeline: wgpu::RenderPipeline,
-
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
+    box_scene: BoxScene,
+    light_scene: LightScene,
 
     camera: Camera,
     camera_buffer: wgpu::Buffer,
@@ -106,84 +102,6 @@ impl State {
         surface.configure(&device, &config);
 
         Ok((surface, device, queue, config, size))
-    }
-
-    fn create_render_pipeline(
-        device: &wgpu::Device,
-        config: &wgpu::SurfaceConfiguration,
-        bind_group_layouts: &[&wgpu::BindGroupLayout],
-    ) -> wgpu::RenderPipeline {
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../res/shaders/box.wgsl").into()),
-        });
-
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts,
-                push_constant_ranges: &[],
-            });
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[Vertex::desc()],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,
-                polygon_mode: if cfg!(target_arch = "wasm32") {
-                    wgpu::PolygonMode::Fill
-                } else {
-                    wgpu::PolygonMode::Line
-                },
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: Texture::DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-        });
-
-        render_pipeline
-    }
-
-    fn create_vertex(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer, u32) {
-        let geometry_data = create_grid();
-        let vertices = geometry_data.vertex_data();
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&geometry_data.indices16),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-        let num_indices = geometry_data.indices16.len() as u32;
-
-        (vertex_buffer, index_buffer, num_indices)
     }
 
     fn create_camera(
@@ -312,8 +230,6 @@ impl State {
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
-        let (vertex_buffer, index_buffer, num_indices) = Self::create_vertex(&device);
-
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
 
@@ -321,7 +237,8 @@ impl State {
             Self::create_texture(&device, &queue)?;
 
         let bind_group_layouts = [&camera_bind_group_layout, &texture_bind_group_layout];
-        let render_pipeline = Self::create_render_pipeline(&device, &config, &bind_group_layouts);
+        let box_scene = BoxScene::new(&device, &config, &bind_group_layouts);
+        let light_scene = LightScene::new(&device, &config, &bind_group_layouts);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
 
@@ -333,11 +250,8 @@ impl State {
             config,
             size,
 
-            render_pipeline,
-
-            vertex_buffer,
-            index_buffer,
-            num_indices,
+            box_scene,
+            light_scene,
 
             camera,
             camera_buffer,
@@ -417,12 +331,25 @@ impl State {
                 }),
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_pipeline(&self.box_scene.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.set_vertex_buffer(0, self.box_scene.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(
+                self.box_scene.index_buffer.slice(..),
+                wgpu::IndexFormat::Uint16,
+            );
+            render_pass.draw_indexed(0..self.box_scene.num_indices, 0, 0..1);
+
+            render_pass.set_pipeline(&self.light_scene.render_pipeline);
+            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
+            render_pass.set_vertex_buffer(0, self.light_scene.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(
+                self.light_scene.index_buffer.slice(..),
+                wgpu::IndexFormat::Uint16,
+            );
+            render_pass.draw_indexed(0..self.light_scene.num_indices, 0, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

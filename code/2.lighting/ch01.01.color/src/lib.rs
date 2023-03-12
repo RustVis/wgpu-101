@@ -7,6 +7,7 @@ mod error;
 mod frames;
 mod geometry;
 mod init;
+mod scenes;
 mod state;
 mod texture;
 mod uniforms;
