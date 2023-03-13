@@ -15,6 +15,8 @@ use crate::vertex::Vertex;
 pub struct BoxUniform {
     pub box_color: Vector4<f32>,
     pub light_color: Vector4<f32>,
+    pub ambient: f32,
+    pad: [f32; 3],
 }
 
 impl Default for BoxUniform {
@@ -22,11 +24,13 @@ impl Default for BoxUniform {
         Self {
             box_color: Vector4::new(1.0, 0.5, 0.31, 1.0),
             light_color: Vector4::new(1.0, 1.0, 1.0, 1.0),
+            ambient: 0.12,
+            pad: [0.0, 0.0, 0.0],
         }
     }
 }
 
-pub type BoxUniformBytes = [f32; 8];
+pub type BoxUniformBytes = [f32; 12];
 pub type BoxUniformRef<'a> = &'a BoxUniformBytes;
 
 impl AsRef<BoxUniformBytes> for BoxUniform {
@@ -90,6 +94,12 @@ impl BoxScene {
             contents: bytemuck::cast_slice(uniform_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
+        //let light_uniform_buffer = init.device.create_buffer(&wgpu::BufferDescriptor {
+        //    label: Some("Light Uniform Buffer"),
+        //    size: 48,
+        //    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //    mapped_at_creation: false,
+        //});
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {

@@ -36,6 +36,7 @@ struct FragmentInput {
 struct BoxUniform {
 	@location(0) box_color: vec4<f32>,
 	@location(1) light_color: vec4<f32>,
+	@location(2) ambient: f32,
 };
 
 @group(1)
@@ -44,6 +45,7 @@ var<uniform> box_uniform: BoxUniform;
 
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
-	return box_uniform.light_color * box_uniform.box_color;
-	//return box_uniform.box_color * box_uniform.light_color;
+	let ambient = box_uniform.light_color * box_uniform.ambient;
+	let result = ambient * box_uniform.box_color;
+	return result;
 }

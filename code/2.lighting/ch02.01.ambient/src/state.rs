@@ -12,7 +12,7 @@ use winit::window::Window;
 
 use crate::box_scene::BoxScene;
 use crate::camera::Camera;
-use crate::frames::ColorWindow;
+use crate::frames::BoxUniformWindow;
 use crate::light_scene::LightScene;
 use crate::texture::Texture;
 use crate::Error;
@@ -37,7 +37,7 @@ pub struct State {
     start_time: Instant,
     egui_platform: Platform,
     egui_render_pass: RenderPass,
-    color_window: ColorWindow,
+    color_window: BoxUniformWindow,
 }
 
 impl State {
@@ -165,7 +165,7 @@ impl State {
         surface_format: wgpu::TextureFormat,
         size: PhysicalSize<u32>,
         scale_factor: f64,
-    ) -> (Platform, RenderPass, ColorWindow) {
+    ) -> (Platform, RenderPass, BoxUniformWindow) {
         let platform = Platform::new(PlatformDescriptor {
             physical_width: size.width,
             physical_height: size.height,
@@ -174,7 +174,7 @@ impl State {
         });
 
         let render_pass = RenderPass::new(device, surface_format, 1);
-        let color_window = ColorWindow::default();
+        let color_window = BoxUniformWindow::default();
 
         (platform, render_pass, color_window)
     }
@@ -192,6 +192,7 @@ impl State {
         let box_scene = BoxScene::new(&device, &config, &camera_bind_group_layout);
         let color = &box_scene.uniform.light_color;
         color_window.set_color((color.x, color.y, color.z).into());
+        color_window.set_ambient(box_scene.uniform.ambient);
         let light_scene = LightScene::new(&device, &config, &camera_bind_group_layout);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
@@ -256,6 +257,9 @@ impl State {
         self.box_scene.uniform.light_color.x = color.x;
         self.box_scene.uniform.light_color.y = color.y;
         self.box_scene.uniform.light_color.z = color.z;
+
+        let ambient = self.color_window.ambient();
+        self.box_scene.uniform.ambient = ambient;
 
         self.queue.write_buffer(
             &self.box_scene.uniform_buffer,
