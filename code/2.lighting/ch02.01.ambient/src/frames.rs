@@ -125,3 +125,51 @@ impl FpsWindow {
             });
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct BoxUniformWindow {
+    light_color: Vector3<f32>,
+    ambient: f32,
+}
+
+impl Default for BoxUniformWindow {
+    fn default() -> Self {
+        Self {
+            light_color: Vector3::new(0.3, 0.4, 0.5),
+            ambient: 0.9,
+        }
+    }
+}
+
+impl BoxUniformWindow {
+    pub fn set_color(&mut self, color: Vector3<f32>) {
+        self.light_color = color;
+    }
+
+    pub fn color(&self) -> &Vector3<f32> {
+        &self.light_color
+    }
+
+    pub fn set_ambient(&mut self, ambient: f32) {
+        self.ambient = ambient;
+    }
+
+    pub const fn ambient(&self) -> f32 {
+        self.ambient
+    }
+
+    pub fn ui(&mut self, ctx: &egui::Context) {
+        egui::Window::new("Box Uniform")
+            .default_width(320.0)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Light Color:");
+                    ui.color_edit_button_rgb(self.light_color.as_mut());
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Ambient Strength:");
+                    ui.add(egui::Slider::new(&mut self.ambient, 0.0..=1.0));
+                });
+            });
+    }
+}
