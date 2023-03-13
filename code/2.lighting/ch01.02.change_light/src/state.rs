@@ -2,6 +2,9 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
+use egui_winit_platform::{Platform, PlatformDescriptor};
+use instant::Instant;
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -9,11 +12,11 @@ use winit::window::Window;
 
 use crate::box_scene::BoxScene;
 use crate::camera::Camera;
+use crate::frames::ColorWindow;
 use crate::light_scene::LightScene;
 use crate::texture::Texture;
 use crate::Error;
 
-#[derive(Debug)]
 pub struct State {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -30,6 +33,11 @@ pub struct State {
     camera_bind_group: wgpu::BindGroup,
 
     depth_texture: Texture,
+
+    start_time: Instant,
+    egui_platform: Platform,
+    egui_render_pass: RenderPass,
+    color_window: ColorWindow,
 }
 
 impl State {
@@ -42,6 +50,7 @@ impl State {
             wgpu::Queue,
             wgpu::SurfaceConfiguration,
             PhysicalSize<u32>,
+            wgpu::TextureFormat,
         ),
         Error,
     > {
@@ -101,7 +110,7 @@ impl State {
         };
         surface.configure(&device, &config);
 
-        Ok((surface, device, queue, config, size))
+        Ok((surface, device, queue, config, size, surface_format))
     }
 
     fn create_camera(
@@ -151,13 +160,38 @@ impl State {
         ))
     }
 
+    fn create_egui_platform(
+        device: &wgpu::Device,
+        surface_format: wgpu::TextureFormat,
+        size: PhysicalSize<u32>,
+        scale_factor: f64,
+    ) -> (Platform, RenderPass, ColorWindow) {
+        let platform = Platform::new(PlatformDescriptor {
+            physical_width: size.width,
+            physical_height: size.height,
+            scale_factor,
+            ..Default::default()
+        });
+
+        let render_pass = RenderPass::new(device, surface_format, 1);
+        let color_window = ColorWindow::default();
+
+        (platform, render_pass, color_window)
+    }
+
     pub async fn new(window: Window) -> Result<Self, Error> {
-        let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
+        let (surface, device, queue, config, size, surface_format) =
+            Self::create_surface(&window).await?;
+
+        let (egui_platform, egui_render_pass, mut color_window) =
+            Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
 
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
 
         let box_scene = BoxScene::new(&device, &config, &camera_bind_group_layout);
+        let color = &box_scene.uniform.light_color;
+        color_window.set_color((color.x, color.y, color.z).into());
         let light_scene = LightScene::new(&device, &config, &camera_bind_group_layout);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
@@ -178,6 +212,11 @@ impl State {
             camera_bind_group,
 
             depth_texture,
+
+            start_time: Instant::now(),
+            egui_platform,
+            egui_render_pass,
+            color_window,
         })
     }
 
@@ -187,6 +226,10 @@ impl State {
 
     pub fn window(&self) -> &Window {
         &self.window
+    }
+
+    pub fn platform_mut(&mut self) -> &mut Platform {
+        &mut self.egui_platform
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -206,6 +249,20 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        let dt = self.start_time.elapsed().as_secs_f64();
+        self.egui_platform.update_time(dt);
+
+        let color = self.color_window.color();
+        self.box_scene.uniform.light_color.x = color.x;
+        self.box_scene.uniform.light_color.y = color.y;
+        self.box_scene.uniform.light_color.z = color.z;
+
+        self.queue.write_buffer(
+            &self.box_scene.uniform_buffer,
+            0,
+            bytemuck::cast_slice(self.box_scene.uniform.as_ref()),
+        );
+
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
@@ -269,6 +326,35 @@ impl State {
                 wgpu::IndexFormat::Uint16,
             );
             render_pass.draw_indexed(0..self.light_scene.num_indices, 0, 0..1);
+        }
+
+        // Draw the egui UI frame.
+        {
+            self.egui_platform.begin_frame();
+            self.color_window.ui(&self.egui_platform.context());
+            let full_output = self.egui_platform.end_frame(Some(&self.window));
+            let paint_jobs = self.egui_platform.context().tessellate(full_output.shapes);
+            // Upload all resources for the GPU.
+            let screen_descriptor = ScreenDescriptor {
+                physical_width: self.config.width,
+                physical_height: self.config.height,
+                scale_factor: self.window.scale_factor() as f32,
+            };
+            let tdelta: egui::TexturesDelta = full_output.textures_delta;
+            self.egui_render_pass
+                .add_textures(&self.device, &self.queue, &tdelta)
+                .expect("add texture ok");
+            self.egui_render_pass.update_buffers(
+                &self.device,
+                &self.queue,
+                &paint_jobs,
+                &screen_descriptor,
+            );
+
+            // Record all render passes.
+            self.egui_render_pass
+                .execute(&mut encoder, &view, &paint_jobs, &screen_descriptor, None)
+                .unwrap();
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

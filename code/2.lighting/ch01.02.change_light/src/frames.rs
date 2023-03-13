@@ -64,6 +64,10 @@ impl Default for ColorWindow {
 }
 
 impl ColorWindow {
+    pub fn set_color(&mut self, color: Vector3<f32>) {
+        self.color = color;
+    }
+
     pub fn color(&self) -> &Vector3<f32> {
         &self.color
     }
