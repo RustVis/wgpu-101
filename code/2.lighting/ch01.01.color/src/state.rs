@@ -7,8 +7,9 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::box_scene::BoxScene;
 use crate::camera::Camera;
-use crate::scenes::{BoxScene, LightScene};
+use crate::light_scene::LightScene;
 use crate::texture::Texture;
 use crate::Error;
 
@@ -156,9 +157,8 @@ impl State {
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
 
-        let bind_group_layouts = [&camera_bind_group_layout];
-        let box_scene = BoxScene::new(&device, &config, &bind_group_layouts);
-        let light_scene = LightScene::new(&device, &config, &bind_group_layouts);
+        let box_scene = BoxScene::new(&device, &config, &camera_bind_group_layout);
+        let light_scene = LightScene::new(&device, &config, &camera_bind_group_layout);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
 
@@ -252,6 +252,7 @@ impl State {
 
             render_pass.set_pipeline(&self.box_scene.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.box_scene.uniform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.box_scene.vertex_buffer.slice(..));
             render_pass.set_index_buffer(
                 self.box_scene.index_buffer.slice(..),
@@ -261,6 +262,7 @@ impl State {
 
             render_pass.set_pipeline(&self.light_scene.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.light_scene.uniform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.light_scene.vertex_buffer.slice(..));
             render_pass.set_index_buffer(
                 self.light_scene.index_buffer.slice(..),

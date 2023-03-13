@@ -2,11 +2,13 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+mod box_scene;
 mod camera;
 mod error;
 mod frames;
 mod geometry;
 mod init;
+mod light_scene;
 mod scenes;
 mod state;
 mod texture;

@@ -33,11 +33,16 @@ struct FragmentInput {
 	@location(0) tex_coords: vec2<f32>,
 };
 
+struct BoxUniform {
+	@location(0) box_color: vec4<f32>,
+	@location(1) light_color: vec4<f32>,
+}
+
 @group(1)
 @binding(0)
-var container_texture: texture_2d<f32>;
+var<uniform> box_uniform: BoxUniform;
 
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
-	return vec4(1.0, 0.0, 0.0, 1.0);
+	return box_uniform.box_color * box_uniform.light_color;
 }

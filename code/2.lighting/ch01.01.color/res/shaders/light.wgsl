@@ -18,16 +18,20 @@ struct CameraUniform {
 @binding(0)
 var<uniform> camera_uniform: CameraUniform;
 
-struct Uniform {
+struct LightUniform {
 	@location(0) model: mat4x4<f32>,
 };
+
+@group(1)
+@binding(0)
+var<uniform> light_uniform: LightUniform;
 
 @vertex
 fn vs_main(
 	in: VertexInput,
 ) -> VertexOutput {
 	var out: VertexOutput;
-	out.position = camera_uniform.view_proj * vec4<f32>(in.position, 1.0);
+	out.position = camera_uniform.view_proj * light_uniform.model * vec4<f32>(in.position, 1.0);
 	out.tex_coords = in.tex_coords;
 	return out;
 }
