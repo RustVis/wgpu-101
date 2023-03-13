@@ -2,12 +2,13 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::{Matrix4, One};
+use cgmath::{Matrix4, One, Vector3};
 use std::mem;
 use wgpu::util::DeviceExt;
 
 use crate::scenes::create_vertex;
 use crate::texture::Texture;
+use crate::transforms;
 use crate::vertex::Vertex;
 
 #[repr(C)]
@@ -81,7 +82,12 @@ impl LightScene {
         wgpu::BindGroupLayout,
         wgpu::BindGroup,
     ) {
-        let uniform = LightUniform::default();
+        let mut uniform = LightUniform::default();
+        let light_pos = Vector3::new(1.0, 1.2, 2.0);
+        transforms::translate(&mut uniform.model, light_pos);
+        let light_scale = Vector3::new(0.2, 0.2, 0.2);
+        transforms::scale(&mut uniform.model, light_scale);
+
         let uniform_ref = uniform.as_ref();
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Light Uniform Buffer"),
