@@ -28,7 +28,6 @@ pub struct State {
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
 
-    texture_bind_group: wgpu::BindGroup,
     depth_texture: Texture,
 }
 
@@ -151,92 +150,13 @@ impl State {
         ))
     }
 
-    fn create_texture(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
-        let container_bytes = include_bytes!("../res/textures/container.jpg");
-        let container_texture =
-            Texture::from_bytes(device, queue, container_bytes, Some("container"))?;
-
-        let face_bytes = include_bytes!("../res/textures/awesome_face.png");
-        let face_texture = Texture::from_bytes(device, queue, face_bytes, Some("face"))?;
-
-        let texture_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 2,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 3,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
-
-        let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&face_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&face_texture.sampler),
-                },
-            ],
-            label: Some("texture_bind_group"),
-        });
-
-        Ok((texture_bind_group_layout, texture_bind_group))
-    }
-
     pub async fn new(window: Window) -> Result<Self, Error> {
         let (surface, device, queue, config, size) = Self::create_surface(&window).await?;
 
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
 
-        let (texture_bind_group_layout, texture_bind_group) =
-            Self::create_texture(&device, &queue)?;
-
-        let bind_group_layouts = [&camera_bind_group_layout, &texture_bind_group_layout];
+        let bind_group_layouts = [&camera_bind_group_layout];
         let box_scene = BoxScene::new(&device, &config, &bind_group_layouts);
         let light_scene = LightScene::new(&device, &config, &bind_group_layouts);
 
@@ -257,7 +177,6 @@ impl State {
             camera_buffer,
             camera_bind_group,
 
-            texture_bind_group,
             depth_texture,
         })
     }
@@ -333,7 +252,6 @@ impl State {
 
             render_pass.set_pipeline(&self.box_scene.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.box_scene.vertex_buffer.slice(..));
             render_pass.set_index_buffer(
                 self.box_scene.index_buffer.slice(..),
@@ -343,7 +261,6 @@ impl State {
 
             render_pass.set_pipeline(&self.light_scene.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.light_scene.vertex_buffer.slice(..));
             render_pass.set_index_buffer(
                 self.light_scene.index_buffer.slice(..),

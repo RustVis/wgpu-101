@@ -2,6 +2,8 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
+#![allow(dead_code)]
+
 use image::GenericImageView;
 use winit::dpi::PhysicalSize;
 

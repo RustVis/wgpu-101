@@ -25,7 +25,7 @@ impl BoxScene {
     ) -> Self {
         let render_pipeline = Self::create_render_pipeline(device, config, bind_group_layouts);
 
-        let (vertex_buffer, index_buffer, num_indices) = create_vertex(&device);
+        let (vertex_buffer, index_buffer, num_indices) = create_vertex(device);
 
         Self {
             render_pipeline,
@@ -110,7 +110,7 @@ impl LightScene {
     ) -> Self {
         let render_pipeline = Self::create_render_pipeline(device, config, bind_group_layouts);
 
-        let (vertex_buffer, index_buffer, num_indices) = create_vertex(&device);
+        let (vertex_buffer, index_buffer, num_indices) = create_vertex(device);
 
         Self {
             render_pipeline,
