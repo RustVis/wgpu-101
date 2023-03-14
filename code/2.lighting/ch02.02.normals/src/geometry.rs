@@ -6,6 +6,7 @@
 
 #![allow(dead_code)]
 
+use cgmath::{InnerSpace, Vector3};
 use std::f32::consts::PI;
 use std::iter::zip;
 
@@ -131,6 +132,7 @@ pub fn create_sphere_detail(radius: f32, levels: u32, slices: u32) -> GeometryDa
     let index_count: usize = (6 * (levels - 1) * slices) as usize;
     let mut geo_data = GeometryData::default();
     geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.normals.resize(vertex_count, [0.0, 0.0, 0.0]);
     geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
     if index_count > INDICES32_THRESHOLD {
         geo_data.indices32.resize(index_count, 0);
@@ -151,6 +153,7 @@ pub fn create_sphere_detail(radius: f32, levels: u32, slices: u32) -> GeometryDa
 
     // Top vertex
     geo_data.vertices[v_index] = [0.0, radius, 0.0];
+    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
     geo_data.tex_coords[v_index] = [0.0, 0.0];
     v_index += 1;
 
@@ -162,8 +165,11 @@ pub fn create_sphere_detail(radius: f32, levels: u32, slices: u32) -> GeometryDa
             y = radius * phi.cos();
             z = radius * phi.sin() * theta.sin();
             let pos = [x, y, z];
+            let pos_norm = Vector3::new(x, y, z).normalize();
 
             geo_data.vertices[v_index] = pos;
+            geo_data.normals[v_index] = [pos_norm.x, pos_norm.y, pos_norm.z];
+
             geo_data.tex_coords[v_index] = [theta / 2.0 / PI, phi / PI];
             v_index += 1;
         }
@@ -171,6 +177,7 @@ pub fn create_sphere_detail(radius: f32, levels: u32, slices: u32) -> GeometryDa
 
     // Bottom vertex
     geo_data.vertices[v_index] = [0.0, -radius, 0.0];
+    geo_data.normals[v_index] = [0.0, -1.0, 0.0];
     geo_data.tex_coords[v_index] = [0.0, 1.0];
     //v_index += 1;
 
@@ -276,6 +283,7 @@ pub fn create_cylinder_detail(
     let stacks_f32 = stacks as f32;
 
     geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.normals.resize(vertex_count, [0.0, 0.0, 0.0]);
     geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
 
     if index_count > INDICES32_THRESHOLD {
@@ -300,6 +308,7 @@ pub fn create_cylinder_detail(
                 let v = 1.0 - i as f32 / stacks_f32;
 
                 geo_data.vertices[v_index] = [radius * theta.cos(), y, radius * theta.sin()];
+                geo_data.normals[v_index] = [theta.cos(), 0.0, theta.sin()];
                 geo_data.tex_coords[v_index] = [u * tex_u, v * tex_v];
                 v_index += 1;
             }
@@ -349,6 +358,7 @@ pub fn create_cylinder_detail(
 
         // Center point of top circular
         geo_data.vertices[v_index] = [0.0, h2, 0.0];
+        geo_data.normals[v_index] = [0.0, 1.0, 0.0];
         geo_data.tex_coords[v_index] = [0.5, 0.5];
         v_index += 1;
 
@@ -358,12 +368,14 @@ pub fn create_cylinder_detail(
             let u = theta.cos() * radius / height + 0.5;
             let v = theta.sin() * radius / height + 0.5;
             geo_data.vertices[v_index] = [radius * theta.cos(), h2, radius * theta.sin()];
+            geo_data.normals[v_index] = [0.0, 1.0, 0.0];
             geo_data.tex_coords[v_index] = [u, v];
             v_index += 1;
         }
 
         // Center point of bottom circular
         geo_data.vertices[v_index] = [0.0, -h2, 0.0];
+        geo_data.normals[v_index] = [0.0, -1.0, 0.0];
         geo_data.tex_coords[v_index] = [0.5, 0.5];
         v_index += 1;
 
@@ -373,6 +385,7 @@ pub fn create_cylinder_detail(
             let u = theta.cos() * radius / height + 0.5;
             let v = theta.sin() * radius / height + 0.5;
             geo_data.vertices[v_index] = [radius * theta.cos(), -h2, radius * theta.sin()];
+            geo_data.normals[v_index] = [0.0, -1.0, 0.0];
             geo_data.tex_coords[v_index] = [u, v];
             v_index += 1;
         }
@@ -433,6 +446,7 @@ pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData
     let index_count = (6 * slices) as usize;
 
     geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.normals.resize(vertex_count, [0.0, 0.0, 0.0]);
     geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
 
     if index_count > 65535 {
@@ -442,8 +456,9 @@ pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData
     }
 
     let h2 = height / 2.0;
-    let mut theta;
+    let mut theta: f32 = 0.0;
     let per_theta = 2.0 * PI / slices as f32;
+    let len: f32 = (height * height + radius * radius).sqrt();
 
     // Side face
     {
@@ -452,6 +467,12 @@ pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData
 
         for _i in 0..slices {
             geo_data.vertices[v_index] = [0.0, h2, 0.0];
+            geo_data.normals[v_index] = [
+                radius * theta.cos() / len,
+                height / len,
+                radius * theta.sin() / len,
+            ];
+
             geo_data.tex_coords[v_index] = [0.5, 0.5];
             v_index += 1;
         }
@@ -459,6 +480,12 @@ pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData
         for i in 0..slices {
             theta = i as f32 * per_theta;
             geo_data.vertices[v_index] = [radius * theta.cos(), -h2, radius * theta.sin()];
+            geo_data.normals[v_index] = [
+                radius * theta.cos() / len,
+                height / len,
+                radius * theta.sin() / len,
+            ];
+
             geo_data.tex_coords[v_index] = [theta.cos() / 2.0 + 0.5, theta.sin() / 2.0 + 0.5];
             v_index += 1;
         }
@@ -493,12 +520,14 @@ pub fn create_cone_detail(radius: f32, height: f32, slices: u32) -> GeometryData
             theta = i as f32 * per_theta;
 
             geo_data.vertices[v_index] = [radius * theta.cos(), -h2, radius * theta.sin()];
+            geo_data.normals[v_index] = [0.0, -1.0, 0.0];
             geo_data.tex_coords[v_index] = [theta.cos() / 2.0 + 0.5, theta.sin() / 2.0 + 0.5];
             v_index += 1;
         }
 
         // Center point of bottom circular.
         geo_data.vertices[v_index] = [0.0, -h2, 0.0];
+        geo_data.normals[v_index] = [0.0, -1.0, 0.0];
         geo_data.tex_coords[v_index] = [0.5, 0.5];
         //v_index += 1;
 
@@ -536,6 +565,7 @@ pub fn create_plane_detail(width: f32, depth: f32, tex_u: f32, tex_v: f32) -> Ge
     let mut geo_data = GeometryData::default();
 
     geo_data.vertices.resize(4, [0.0, 0.0, 0.0]);
+    geo_data.normals.resize(4, [0.0, 0.0, 0.0]);
     geo_data.tex_coords.resize(4, [0.0, 0.0]);
 
     let w2 = width / 2.0;
@@ -543,18 +573,22 @@ pub fn create_plane_detail(width: f32, depth: f32, tex_u: f32, tex_v: f32) -> Ge
 
     let mut v_index: usize = 0;
     geo_data.vertices[v_index] = [-w2, 0.0, -d2];
+    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
     geo_data.tex_coords[v_index] = [0.0, tex_v];
     v_index += 1;
 
     geo_data.vertices[v_index] = [-w2, 0.0, d2];
+    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
     geo_data.tex_coords[v_index] = [0.0, 0.0];
     v_index += 1;
 
     geo_data.vertices[v_index] = [w2, 0.0, d2];
+    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
     geo_data.tex_coords[v_index] = [tex_u, 0.0];
     v_index += 1;
 
     geo_data.vertices[v_index] = [w2, 0.0, -d2];
+    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
     geo_data.tex_coords[v_index] = [tex_u, tex_v];
     //v_index += 1;
 
