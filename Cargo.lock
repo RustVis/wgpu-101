@@ -407,19 +407,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch02_02_diffuse"
+name = "ch02_02_hello_triangle"
 version = "0.1.0"
 dependencies = [
- "bytemuck",
  "cfg-if",
- "cgmath",
- "egui 0.21.0",
- "egui_wgpu_backend",
- "egui_winit_platform",
  "env_logger",
- "epi",
- "image",
- "instant",
  "log",
  "pollster",
  "thiserror",
@@ -432,11 +424,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "ch02_02_hello_triangle"
+name = "ch02_02_normals"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "cfg-if",
+ "cgmath",
+ "egui 0.21.0",
+ "egui_wgpu_backend",
+ "egui_winit_platform",
  "env_logger",
+ "epi",
+ "image",
+ "instant",
  "log",
  "pollster",
  "thiserror",

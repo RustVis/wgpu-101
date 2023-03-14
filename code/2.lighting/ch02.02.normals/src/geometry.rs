@@ -16,6 +16,7 @@ pub const INDICES32_THRESHOLD: usize = u16::MAX as usize;
 #[derive(Debug, Default, Clone)]
 pub struct GeometryData {
     pub vertices: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
     pub tex_coords: Vec<[f32; 2]>,
     pub indices16: Vec<u16>,
     pub indices32: Vec<u32>,
@@ -24,8 +25,9 @@ pub struct GeometryData {
 impl GeometryData {
     pub fn vertex_data(&self) -> Vec<Vertex> {
         let mut list = Vec::with_capacity(self.vertices.len());
-        for (vertex, tex_coord) in zip(self.vertices.iter(), self.tex_coords.iter()) {
-            list.push(Vertex(*vertex, *tex_coord));
+        let zip_iter = zip(self.normals.iter(), self.tex_coords.iter());
+        for (vertex, (normals, tex_coord)) in self.vertices.iter().zip(zip_iter) {
+            list.push(Vertex(*vertex, *normals, *tex_coord));
         }
         list
     }
@@ -75,6 +77,22 @@ pub fn create_cube_detail(width: f32, height: f32, depth: f32) -> GeometryData {
         [w2, -h2, -d2],
     ];
 
+    let mut normals = vec![[0.0, 0.0, 0.0]; 24];
+    for i in 0..4 {
+        // right(+X)
+        normals[i] = [1.0, 0.0, 0.0];
+        // left(-X)
+        normals[i + 4] = [-1.0, 0.0, 0.0];
+        // top(+Y)
+        normals[i + 8] = [0.0, 1.0, 0.0];
+        // bottom(-Y)
+        normals[i + 12] = [0.0, -1.0, 0.0];
+        // rear(+Z)
+        normals[i + 16] = [0.0, 0.0, 1.0];
+        // front(-Z)
+        normals[i + 20] = [0.0, 0.0, -1.0];
+    }
+
     let mut tex_coords = vec![[0.0, 0.0]; 24];
     for i in 0..6 {
         tex_coords[i * 4] = [0.0, 1.0];
@@ -94,6 +112,7 @@ pub fn create_cube_detail(width: f32, height: f32, depth: f32) -> GeometryData {
 
     GeometryData {
         vertices,
+        normals,
         tex_coords,
         indices16,
         indices32: Vec::new(),

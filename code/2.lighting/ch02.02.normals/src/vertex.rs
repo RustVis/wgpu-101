@@ -8,12 +8,12 @@ use std::mem::size_of;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-/// Represents `(position, tex_coords)` pair.
-pub struct Vertex(pub [f32; 3], pub [f32; 2]);
+/// Represents `(position, normals, tex_coords)` pair.
+pub struct Vertex(pub [f32; 3], pub [f32; 3], pub [f32; 2]);
 
 impl Vertex {
-    const ATTRS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2];
+    const ATTRS: [wgpu::VertexAttribute; 3] =
+        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x2];
 
     pub const fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
