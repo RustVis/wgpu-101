@@ -2,12 +2,14 @@
 // Vertex Shader
 struct VertexInput {
 	@location(0) position: vec3<f32>,
-	@location(1) tex_coords: vec2<f32>,
+	@location(1) normal: vec3<f32>,
+	@location(2) tex_coords: vec2<f32>,
 }
 
 struct VertexOutput {
 	@builtin(position) position: vec4<f32>,
-	@location(0) tex_coords: vec2<f32>,
+	@location(0) normal: vec3<f32>,
+	@location(1) tex_coords: vec2<f32>,
 };
 
 struct CameraUniform {
@@ -24,19 +26,22 @@ fn vs_main(
 ) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = camera_uniform.view_proj * vec4<f32>(in.position, 1.0);
+	out.normal = in.normal;
 	out.tex_coords = in.tex_coords;
 	return out;
 }
 
 // Fragment Shader
 struct FragmentInput {
-	@location(0) tex_coords: vec2<f32>,
+	@location(0) normal: vec3<f32>,
+	@location(1) tex_coords: vec2<f32>,
 };
 
 struct BoxUniform {
 	@location(0) box_color: vec4<f32>,
 	@location(1) light_color: vec4<f32>,
-	@location(2) ambient: f32,
+	@location(2) light_pos: vec3<f32>,
+	@location(3) ambient_strength: f32,
 };
 
 @group(1)
@@ -45,7 +50,15 @@ var<uniform> box_uniform: BoxUniform;
 
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
-	let ambient = box_uniform.light_color * box_uniform.ambient;
-	let result = ambient * box_uniform.box_color;
+	// ambient
+	let ambient = box_uniform.ambient_strength * box_uniform.light_color;
+
+  	// diffuse
+	let norm = normalize(in.normal);
+	let light_dir = normalize(box_uniform.light_pos - in.position);
+	let diff = max(dot(norm, light_dir), 0.0);
+	let diffuse = diff * box_uniform.light_color;
+
+	let result = (ambient + diffuse) * box_uniform.box_color;
 	return result;
 }
