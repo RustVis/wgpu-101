@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [[bin]]
-name = "p1_getting_started_ch01_01_color"
+name = "p2_lighting_ch01_01_color"
 path = "src/bin/main.rs"
 
 [lib]

@@ -1,11 +1,11 @@
 [package]
-name = "ch02_01_ambient"
+name = "ch02_02_diffuse"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "p2_lighting_ch02_01_ambient"
+name = "p2_lighting_ch02_02_diffuse"
 path = "src/bin/main.rs"
 
 [lib]
