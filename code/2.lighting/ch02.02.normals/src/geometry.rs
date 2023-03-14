@@ -562,39 +562,34 @@ pub fn create_plane() -> GeometryData {
 }
 
 pub fn create_plane_detail(width: f32, depth: f32, tex_u: f32, tex_v: f32) -> GeometryData {
-    let mut geo_data = GeometryData::default();
-
-    geo_data.vertices.resize(4, [0.0, 0.0, 0.0]);
-    geo_data.normals.resize(4, [0.0, 0.0, 0.0]);
-    geo_data.tex_coords.resize(4, [0.0, 0.0]);
-
     let w2 = width / 2.0;
     let d2 = depth / 2.0;
 
-    let mut v_index: usize = 0;
-    geo_data.vertices[v_index] = [-w2, 0.0, -d2];
-    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
-    geo_data.tex_coords[v_index] = [0.0, tex_v];
-    v_index += 1;
+    let vertices = vec![
+        [-w2, 0.0, -d2],
+        [-w2, 0.0, d2],
+        [w2, 0.0, d2],
+        [w2, 0.0, -d2],
+    ];
 
-    geo_data.vertices[v_index] = [-w2, 0.0, d2];
-    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
-    geo_data.tex_coords[v_index] = [0.0, 0.0];
-    v_index += 1;
+    let normals = vec![
+        [0.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0],
+    ];
 
-    geo_data.vertices[v_index] = [w2, 0.0, d2];
-    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
-    geo_data.tex_coords[v_index] = [tex_u, 0.0];
-    v_index += 1;
+    let tex_coords = vec![[0.0, tex_v], [0.0, 0.0], [tex_u, 0.0], [tex_u, tex_v]];
 
-    geo_data.vertices[v_index] = [w2, 0.0, -d2];
-    geo_data.normals[v_index] = [0.0, 1.0, 0.0];
-    geo_data.tex_coords[v_index] = [tex_u, tex_v];
-    //v_index += 1;
+    let indices16 = vec![0, 1, 2, 2, 3, 0];
 
-    geo_data.indices16 = vec![0, 1, 2, 2, 3, 0];
-
-    geo_data
+    GeometryData {
+        vertices,
+        normals,
+        tex_coords,
+        indices16,
+        indices32: Vec::new(),
+    }
 }
 
 #[inline]
@@ -617,6 +612,7 @@ pub fn create_grid_detail(
     let index_count = (6 * slices_x * slices_y) as usize;
 
     geo_data.vertices.resize(vertex_count, [0.0, 0.0, 0.0]);
+    geo_data.normals.resize(vertex_count, [0.0, 0.0, 0.0]);
     geo_data.tex_coords.resize(vertex_count, [0.0, 0.0]);
 
     if index_count > INDICES32_THRESHOLD {
@@ -652,6 +648,7 @@ pub fn create_grid_detail(
             pos_x = left_bottom_x + x * slice_width;
 
             geo_data.vertices[v_index] = [pos_x, 0.0, pos_z];
+            geo_data.normals[v_index] = [0.0, 1.0, 0.0];
             geo_data.tex_coords[v_index] = [x * slice_tex_width, tex_v - z * slice_tex_depth];
             v_index += 1;
         }
