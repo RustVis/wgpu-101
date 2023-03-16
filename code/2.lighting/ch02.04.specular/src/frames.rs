@@ -128,36 +128,24 @@ impl FpsWindow {
 
 #[derive(Debug, Clone)]
 pub struct BoxUniformWindow {
-    light_color: Vector3<f32>,
-    ambient: f32,
+    pub light_color: Vector3<f32>,
+    pub ambient_strength: f32,
+    pub specular_strength: f32,
+    pub shininess_strength: i32,
 }
 
 impl Default for BoxUniformWindow {
     fn default() -> Self {
         Self {
-            light_color: Vector3::new(0.3, 0.4, 0.5),
-            ambient: 0.9,
+            light_color: Vector3::new(1.0, 1.0, 1.0),
+            ambient_strength: 0.1,
+            specular_strength: 0.5,
+            shininess_strength: 32,
         }
     }
 }
 
 impl BoxUniformWindow {
-    pub fn set_color(&mut self, color: Vector3<f32>) {
-        self.light_color = color;
-    }
-
-    pub fn color(&self) -> &Vector3<f32> {
-        &self.light_color
-    }
-
-    pub fn set_ambient(&mut self, ambient: f32) {
-        self.ambient = ambient;
-    }
-
-    pub const fn ambient(&self) -> f32 {
-        self.ambient
-    }
-
     pub fn ui(&mut self, ctx: &egui::Context) {
         egui::Window::new("Box Uniform")
             .default_width(320.0)
@@ -166,9 +154,20 @@ impl BoxUniformWindow {
                     ui.label("Light Color:");
                     ui.color_edit_button_rgb(self.light_color.as_mut());
                 });
+
                 ui.horizontal(|ui| {
                     ui.label("Ambient Strength:");
-                    ui.add(egui::Slider::new(&mut self.ambient, 0.0..=1.0));
+                    ui.add(egui::Slider::new(&mut self.ambient_strength, 0.0..=1.0));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Specular Strength:");
+                    ui.add(egui::Slider::new(&mut self.specular_strength, 0.0..=1.0));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Shininess Strength:");
+                    ui.add(egui::Slider::new(&mut self.shininess_strength, 2..=64));
                 });
             });
     }

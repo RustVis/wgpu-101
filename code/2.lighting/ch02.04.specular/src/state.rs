@@ -191,8 +191,8 @@ impl State {
 
         let box_scene = BoxScene::new(&device, &config, &camera_bind_group_layout);
         let color = &box_scene.uniform.light_color;
-        color_window.set_color((color.x, color.y, color.z).into());
-        color_window.set_ambient(box_scene.uniform.ambient);
+        color_window.light_color = (color.x, color.y, color.z).into();
+        color_window.ambient_strength = box_scene.uniform.ambient_strength;
         let light_scene = LightScene::new(&device, &config, &camera_bind_group_layout);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
@@ -253,13 +253,13 @@ impl State {
         let dt = self.start_time.elapsed().as_secs_f64();
         self.egui_platform.update_time(dt);
 
-        let color = self.color_window.color();
+        let color = self.color_window.light_color;
         self.box_scene.uniform.light_color.x = color.x;
         self.box_scene.uniform.light_color.y = color.y;
         self.box_scene.uniform.light_color.z = color.z;
-
-        let ambient = self.color_window.ambient();
-        self.box_scene.uniform.ambient = ambient;
+        self.box_scene.uniform.ambient_strength = self.color_window.ambient_strength;
+        self.box_scene.uniform.specular_strength = self.color_window.specular_strength;
+        self.box_scene.uniform.shininess_strength = self.color_window.shininess_strength as f32;
 
         self.queue.write_buffer(
             &self.box_scene.uniform_buffer,

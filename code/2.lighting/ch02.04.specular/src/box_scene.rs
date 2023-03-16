@@ -16,7 +16,10 @@ pub struct BoxUniform {
     pub box_color: Vector4<f32>,
     pub light_color: Vector4<f32>,
     pub light_pos: Vector4<f32>,
-    pub ambient: f32,
+    pub view_pos: Vector4<f32>,
+    pub ambient_strength: f32,
+    pub specular_strength: f32,
+    pub shininess_strength: f32,
     pad: [f32; 3],
 }
 
@@ -26,13 +29,16 @@ impl Default for BoxUniform {
             box_color: Vector4::new(1.0, 0.5, 0.31, 1.0),
             light_color: Vector4::new(1.0, 1.0, 1.0, 1.0),
             light_pos: Vector4::new(-1.5, 1.5, 2.0, 1.0),
-            ambient: 0.12,
+            view_pos: Vector4::new(1.0, 1.0, 1.0, 1.0),
+            ambient_strength: 0.1,
+            specular_strength: 0.5,
+            shininess_strength: 32.0,
             pad: [0.0, 0.0, 0.0],
         }
     }
 }
 
-pub type BoxUniformBytes = [f32; 16];
+pub type BoxUniformBytes = [f32; mem::size_of::<BoxUniform>() / mem::size_of::<f32>()];
 pub type BoxUniformRef<'a> = &'a BoxUniformBytes;
 
 impl AsRef<BoxUniformBytes> for BoxUniform {
