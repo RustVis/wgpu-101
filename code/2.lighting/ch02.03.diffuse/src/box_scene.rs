@@ -15,6 +15,7 @@ use crate::vertex::Vertex;
 pub struct BoxUniform {
     pub box_color: Vector4<f32>,
     pub light_color: Vector4<f32>,
+    pub light_pos: Vector4<f32>,
     pub ambient: f32,
     pad: [f32; 3],
 }
@@ -24,13 +25,14 @@ impl Default for BoxUniform {
         Self {
             box_color: Vector4::new(1.0, 0.5, 0.31, 1.0),
             light_color: Vector4::new(1.0, 1.0, 1.0, 1.0),
+            light_pos: Vector4::new(1.0, 1.2, 2.0, 1.0),
             ambient: 0.12,
             pad: [0.0, 0.0, 0.0],
         }
     }
 }
 
-pub type BoxUniformBytes = [f32; 12];
+pub type BoxUniformBytes = [f32; 16];
 pub type BoxUniformRef<'a> = &'a BoxUniformBytes;
 
 impl AsRef<BoxUniformBytes> for BoxUniform {

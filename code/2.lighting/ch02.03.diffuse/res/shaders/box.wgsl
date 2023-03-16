@@ -33,6 +33,7 @@ fn vs_main(
 
 // Fragment Shader
 struct FragmentInput {
+	@builtin(position) position: vec4<f32>,
 	@location(0) normal: vec3<f32>,
 	@location(1) tex_coords: vec2<f32>,
 };
@@ -40,7 +41,7 @@ struct FragmentInput {
 struct BoxUniform {
 	@location(0) box_color: vec4<f32>,
 	@location(1) light_color: vec4<f32>,
-	@location(2) light_pos: vec3<f32>,
+	@location(2) light_pos: vec4<f32>,
 	@location(3) ambient_strength: f32,
 };
 
@@ -55,7 +56,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 
   	// diffuse
 	let norm = normalize(in.normal);
-	let light_dir = normalize(box_uniform.light_pos - in.position);
+	let light_dir = normalize(box_uniform.light_pos - in.position).xyz;
 	let diff = max(dot(norm, light_dir), 0.0);
 	let diffuse = diff * box_uniform.light_color;
 
