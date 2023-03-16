@@ -25,6 +25,20 @@ impl Default for LightUniform {
     }
 }
 
+impl LightUniform {
+    pub fn reset(&mut self) {
+        self.model = Matrix4::one();
+    }
+
+    pub fn set_position(&mut self, pos: Vector3<f32>) {
+        transforms::translate(&mut self.model, pos);
+    }
+
+    pub fn scale(&mut self, scale: Vector3<f32>) {
+        transforms::scale(&mut self.model, scale);
+    }
+}
+
 pub type LightUniformBytes = [f32; 16];
 pub type LightUniformRef<'a> = &'a LightUniformBytes;
 
@@ -83,10 +97,8 @@ impl LightScene {
         wgpu::BindGroup,
     ) {
         let mut uniform = LightUniform::default();
-        let light_pos = Vector3::new(-1.5, 1.5, 2.0);
-        transforms::translate(&mut uniform.model, light_pos);
-        let light_scale = Vector3::new(0.2, 0.2, 0.2);
-        transforms::scale(&mut uniform.model, light_scale);
+        uniform.set_position((-1.5, 1.5, 2.0).into());
+        uniform.scale((0.2, 0.2, 0.2).into());
 
         let uniform_ref = uniform.as_ref();
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

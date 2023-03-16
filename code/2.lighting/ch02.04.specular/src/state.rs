@@ -253,10 +253,15 @@ impl State {
         let dt = self.start_time.elapsed().as_secs_f64();
         self.egui_platform.update_time(dt);
 
-        let color = self.color_window.light_color;
-        self.box_scene.uniform.light_color.x = color.x;
-        self.box_scene.uniform.light_color.y = color.y;
-        self.box_scene.uniform.light_color.z = color.z;
+        self.box_scene.uniform.box_color.x = self.color_window.box_color.x;
+        self.box_scene.uniform.box_color.y = self.color_window.box_color.y;
+        self.box_scene.uniform.box_color.z = self.color_window.box_color.z;
+        self.box_scene.uniform.light_color.x = self.color_window.light_color.x;
+        self.box_scene.uniform.light_color.y = self.color_window.light_color.y;
+        self.box_scene.uniform.light_color.z = self.color_window.light_color.z;
+        self.box_scene.uniform.light_pos.x = self.color_window.light_pos.x;
+        self.box_scene.uniform.light_pos.y = self.color_window.light_pos.y;
+        self.box_scene.uniform.light_pos.z = self.color_window.light_pos.z;
         self.box_scene.uniform.ambient_strength = self.color_window.ambient_strength;
         self.box_scene.uniform.specular_strength = self.color_window.specular_strength;
         self.box_scene.uniform.shininess_strength = self.color_window.shininess_strength as f32;
@@ -265,6 +270,17 @@ impl State {
             &self.box_scene.uniform_buffer,
             0,
             bytemuck::cast_slice(self.box_scene.uniform.as_ref()),
+        );
+
+        let light_pos = self.color_window.light_pos;
+        self.light_scene.uniform.reset();
+        self.light_scene.uniform.set_position(light_pos);
+        self.light_scene.uniform.scale((0.2, 0.2, 0.2).into());
+
+        self.queue.write_buffer(
+            &self.light_scene.uniform_buffer,
+            0,
+            bytemuck::cast_slice(self.light_scene.uniform.as_ref()),
         );
 
         self.queue.write_buffer(

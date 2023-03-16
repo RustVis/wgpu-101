@@ -128,7 +128,9 @@ impl FpsWindow {
 
 #[derive(Debug, Clone)]
 pub struct BoxUniformWindow {
+    pub box_color: Vector3<f32>,
     pub light_color: Vector3<f32>,
+    pub light_pos: Vector3<f32>,
     pub ambient_strength: f32,
     pub specular_strength: f32,
     pub shininess_strength: i32,
@@ -137,7 +139,9 @@ pub struct BoxUniformWindow {
 impl Default for BoxUniformWindow {
     fn default() -> Self {
         Self {
+            box_color: Vector3::new(1.0, 0.5, 0.31),
             light_color: Vector3::new(1.0, 1.0, 1.0),
+            light_pos: Vector3::new(-1.5, 1.5, 2.0),
             ambient_strength: 0.1,
             specular_strength: 0.5,
             shininess_strength: 32,
@@ -151,8 +155,19 @@ impl BoxUniformWindow {
             .default_width(320.0)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
+                    ui.label("Box Color:");
+                    ui.color_edit_button_rgb(self.box_color.as_mut());
+                });
+
+                ui.horizontal(|ui| {
                     ui.label("Light Color:");
                     ui.color_edit_button_rgb(self.light_color.as_mut());
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Light Pos:");
+                    ui.add(egui::Slider::new(&mut self.light_pos.x, -3.0..=3.0));
+                    ui.add(egui::Slider::new(&mut self.light_pos.y, -3.0..=3.0));
+                    ui.add(egui::Slider::new(&mut self.light_pos.z, -3.0..=3.0));
                 });
 
                 ui.horizontal(|ui| {
