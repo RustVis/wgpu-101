@@ -190,9 +190,6 @@ impl State {
             Self::create_camera(&device, size)?;
 
         let box_scene = BoxScene::new(&device, &config, &camera_bind_group_layout);
-        let color = &box_scene.uniform.light_color;
-        color_window.light_color = (color.x, color.y, color.z).into();
-        color_window.ambient_strength = box_scene.uniform.ambient_strength;
         let light_scene = LightScene::new(&device, &config, &camera_bind_group_layout);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
@@ -253,24 +250,11 @@ impl State {
         let dt = self.start_time.elapsed().as_secs_f64();
         self.egui_platform.update_time(dt);
 
-        self.box_scene.uniform.box_color.x = self.color_window.box_color.x;
-        self.box_scene.uniform.box_color.y = self.color_window.box_color.y;
-        self.box_scene.uniform.box_color.z = self.color_window.box_color.z;
-        self.box_scene.uniform.light_color.x = self.color_window.light_color.x;
-        self.box_scene.uniform.light_color.y = self.color_window.light_color.y;
-        self.box_scene.uniform.light_color.z = self.color_window.light_color.z;
-        self.box_scene.uniform.light_pos.x = self.color_window.light_pos.x;
-        self.box_scene.uniform.light_pos.y = self.color_window.light_pos.y;
-        self.box_scene.uniform.light_pos.z = self.color_window.light_pos.z;
-        self.box_scene.uniform.ambient_strength = self.color_window.ambient_strength;
-        self.box_scene.uniform.specular_strength = self.color_window.specular_strength;
-        self.box_scene.uniform.shininess_strength = self.color_window.shininess_strength as f32;
-
-        self.queue.write_buffer(
-            &self.box_scene.uniform_buffer,
-            0,
-            bytemuck::cast_slice(self.box_scene.uniform.as_ref()),
-        );
+        //        self.queue.write_buffer(
+        //            &self.box_scene.uniform_buffer,
+        //            0,
+        //            bytemuck::cast_slice(self.box_scene.uniform.as_ref()),
+        //        );
 
         let light_pos = self.color_window.light_pos;
         self.light_scene.uniform.reset();

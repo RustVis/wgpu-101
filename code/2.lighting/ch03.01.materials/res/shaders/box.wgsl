@@ -41,37 +41,47 @@ struct FragmentInput {
 	@location(2) tex_coords: vec2<f32>,
 };
 
-struct BoxUniform {
-	@location(0) box_color: vec4<f32>,
-	@location(1) light_color: vec4<f32>,
-	@location(2) light_pos: vec4<f32>,
-	@location(3) view_pos: vec4<f32>,
-	@location(4) ambient_strength: f32,
-	@location(5) specular_strength: f32,
-	@location(6) shininess_strength: f32,
+struct Material {
+	@location(0) ambient: vec3<f32>,
+	@location(1) diffuse: vec3<f32>,
+	@location(2) specular: vec3<f32>,
+	@location(3) shininess: f32,
+};
+
+struct Light {
+	@location(0) position: vec3<f32>,
+	@location(1) ambient: vec3<f32>,
+	@location(2) diffuse: vec3<f32>,
+	@location(3) specular: vec3<f32>,
 };
 
 @group(1)
 @binding(0)
-var<uniform> box_uniform: BoxUniform;
+var<uniform> material: Material;
+
+@group(1)
+@binding(1)
+var<uniform> light: Light;
 
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	// ambient
-	let ambient = box_uniform.ambient_strength * box_uniform.light_color;
+	let ambient = light.ambient * material.ambient;
 
   	// diffuse
 	let norm = normalize(in.normal);
-	let light_dir = normalize(box_uniform.light_pos.xyz - in.frag_pos);
+	let light_dir = normalize(light.position - in.frag_pos);
 	let diff = max(dot(norm, light_dir), 0.0);
-	let diffuse = diff * box_uniform.light_color;
+	let diffuse = light.diffuse * (diff * material.diffuse);
 
 	// specular
-	let view_dir = normalize(box_uniform.view_pos.xyz - in.frag_pos);
+	// TODO(Shaohua): Move to uniform
+	let view_pos = vec3<f32>(1.0, 1.0, 1.0);
+	let view_dir = normalize(view_pos - in.frag_pos);
 	let reflect_dir = reflect(-light_dir, norm);
-	let spec = pow(max(dot(view_dir, reflect_dir), 0.0), box_uniform.shininess_strength);
-	let specular = box_uniform.specular_strength * spec * box_uniform.light_color;
+	let spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+	let specular = light.specular * (spec * material.specular);
 
-	let result = (ambient + diffuse + specular) * box_uniform.box_color;
-	return result;
+	let result = ambient + diffuse + specular;
+	return vec4<f32>(result, 1.0);
 }

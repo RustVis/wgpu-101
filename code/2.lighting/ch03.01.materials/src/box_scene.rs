@@ -47,6 +47,46 @@ impl AsRef<BoxUniformBytes> for BoxUniform {
     }
 }
 
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Material {
+    pub ambient: [f32; 3],
+    pub diffuse: [f32; 3],
+    pub specular: [f32; 3],
+    pub shininess: f32,
+}
+
+impl Default for Material {
+    fn default() -> Self {
+        Self {
+            ambient: [1.0, 1.0, 1.0],
+            diffuse: [1.0, 1.0, 1.0],
+            specular: [1.0, 1.0, 1.0],
+            shininess: 32.0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Light {
+    pub position: [f32; 3],
+    pub ambient: [f32; 3],
+    pub diffuse: [f32; 3],
+    pub specular: [f32; 3],
+}
+
+impl Default for Light {
+    fn default() -> Self {
+        Self {
+            position: [-1.5, 1.5, 2.0],
+            ambient: [1.0, 1.0, 1.0],
+            diffuse: [1.0, 1.0, 1.0],
+            specular: [1.0, 1.0, 1.0],
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct BoxScene {
     pub render_pipeline: wgpu::RenderPipeline,
@@ -55,8 +95,10 @@ pub struct BoxScene {
     pub index_buffer: wgpu::Buffer,
     pub num_indices: u32,
 
-    pub uniform: BoxUniform,
-    pub uniform_buffer: wgpu::Buffer,
+    pub material: Material,
+    pub light: Light,
+    pub material_buffer: wgpu::Buffer,
+    pub light_buffer: wgpu::Buffer,
     pub uniform_bind_group: wgpu::BindGroup,
 }
 
@@ -66,8 +108,14 @@ impl BoxScene {
         config: &wgpu::SurfaceConfiguration,
         camera_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
-        let (uniform, uniform_buffer, uniform_bind_group_layout, uniform_bind_group) =
-            Self::create_uniform(device);
+        let (
+            material,
+            light,
+            material_buffer,
+            light_buffer,
+            uniform_bind_group_layout,
+            uniform_bind_group,
+        ) = Self::create_uniform(device);
 
         let bind_group_layouts = [camera_bind_group_layout, &uniform_bind_group_layout];
         let render_pipeline = Self::create_render_pipeline(device, config, &bind_group_layouts);
@@ -81,8 +129,10 @@ impl BoxScene {
             index_buffer,
             num_indices,
 
-            uniform,
-            uniform_buffer,
+            material,
+            light,
+            material_buffer,
+            light_buffer,
             uniform_bind_group,
         }
     }
@@ -90,16 +140,23 @@ impl BoxScene {
     pub fn create_uniform(
         device: &wgpu::Device,
     ) -> (
-        BoxUniform,
+        Material,
+        Light,
+        wgpu::Buffer,
         wgpu::Buffer,
         wgpu::BindGroupLayout,
         wgpu::BindGroup,
     ) {
-        let uniform = BoxUniform::default();
-        let uniform_ref = uniform.as_ref();
-        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Box Uniform Buffer"),
-            contents: bytemuck::cast_slice(uniform_ref),
+        let material = Material::default();
+        let light = Light::default();
+        let material_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Box Material Buffer"),
+            contents: bytemuck::cast_slice(&[material]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+        let light_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Box Light Buffer"),
+            contents: bytemuck::cast_slice(&[light]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         //let light_uniform_buffer = init.device.create_buffer(&wgpu::BufferDescriptor {
@@ -110,29 +167,54 @@ impl BoxScene {
         //});
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            }],
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
             label: Some("Box Buffer Bind Group Layout"),
         });
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: uniform_buffer.as_entire_binding(),
-            }],
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: material_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: light_buffer.as_entire_binding(),
+                },
+            ],
             label: Some("Box Bind Group"),
         });
 
-        (uniform, uniform_buffer, bind_group_layout, bind_group)
+        (
+            material,
+            light,
+            material_buffer,
+            light_buffer,
+            bind_group_layout,
+            bind_group,
+        )
     }
 
     fn create_render_pipeline(
