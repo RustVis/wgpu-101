@@ -172,7 +172,7 @@ impl BoxUniformWindow {
 
                 ui.horizontal(|ui| {
                     ui.label("Ambient Strength:");
-                    ui.add(egui::Slider::new(&mut self.ambient_strength, 0.0..=1.0));
+                    ui.add(egui::Slider::new(&mut self.ambient_strength, 0.01..=1.0));
                 });
 
                 ui.horizontal(|ui| {
