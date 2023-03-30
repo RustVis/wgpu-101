@@ -4,6 +4,7 @@
 
 use cgmath::Vector4;
 use std::mem;
+use wgpu::util::DeviceExt;
 
 use crate::light::Light;
 use crate::scenes::create_vertex;
@@ -102,7 +103,6 @@ impl BoxScene {
         let material = Material::default();
         let light = Light::default();
 
-        /*
         let material_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Box Material Buffer"),
             contents: bytemuck::cast_slice(material.as_ref()),
@@ -113,8 +113,8 @@ impl BoxScene {
             contents: bytemuck::cast_slice(light.as_ref()),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        */
 
+        /*
         let material_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Box Material Buffer"),
             size: 64,
@@ -127,6 +127,7 @@ impl BoxScene {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        */
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[

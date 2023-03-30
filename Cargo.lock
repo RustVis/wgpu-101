@@ -686,6 +686,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch05_03_uniform_alignment"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "cgmath",
+ "env_logger",
+ "instant",
+ "log",
+ "pollster",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "ch06_01_use_texture"
 version = "0.1.0"
 dependencies = [
