@@ -2,25 +2,23 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::Vector3;
+use cgmath::Vector4;
 use std::mem;
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Uniforms {
-    pub color0: Vector3<f32>,
-    pub color1: Vector3<f32>,
-    pub color2: Vector3<f32>,
-    pad: Vector3<f32>,
+    pub color0: Vector4<f32>,
+    pub color1: Vector4<f32>,
+    pub color2: Vector4<f32>,
 }
 
 impl Default for Uniforms {
     fn default() -> Self {
         Self {
-            color0: Vector3::new(1.0, 1.0, 1.0),
-            color1: Vector3::new(1.0, 1.0, 1.0),
-            color2: Vector3::new(1.0, 1.0, 1.0),
-            pad: Vector3::new(1.0, 1.0, 1.0),
+            color0: Vector4::new(1.0, 1.0, 1.0, 1.0),
+            color1: Vector4::new(1.0, 1.0, 1.0, 1.0),
+            color2: Vector4::new(1.0, 1.0, 1.0, 1.0),
         }
     }
 }

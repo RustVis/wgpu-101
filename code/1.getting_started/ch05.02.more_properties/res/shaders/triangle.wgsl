@@ -9,11 +9,11 @@ struct VertexInput {
 struct VertexOutput {
 	@builtin(position) position: vec4<f32>,
 	@location(0) vertex_index: u32,
-	@location(1) color: vec3<f32>,
+	@location(1) color: vec4<f32>,
 };
 
 struct Uniforms {
-	@location(0) colors: array<vec3<f32>, 3>,
+	@location(0) colors: array<vec4<f32>, 3>,
 };
 
 @group(0)
@@ -35,13 +35,11 @@ fn vs_main(
 // Fragment Shader
 struct FragmentInput {
 	@location(0) vertex_index: u32,
-	@location(1) color: vec3<f32>,
+	@location(1) color: vec4<f32>,
 };
 
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
-	return vec4(in.color, 1.0);
-	//var color = uniforms.colors[in.vertex_index];
-	//return vec4(color, 1.0);
+	return in.color;
 }
 
