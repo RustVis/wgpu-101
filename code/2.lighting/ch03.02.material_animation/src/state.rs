@@ -251,11 +251,11 @@ impl State {
         let dt = self.start_time.elapsed().as_secs_f64();
         self.egui_platform.update_time(dt);
 
+        let light_pos = self.color_window.light_pos;
         let dt = dt as f32;
-        let light_pos = Vector3::new((dt * 2.0).sin(), (dt * 0.7).sin(), (dt * 1.3).sin());
         let light = &mut self.box_scene.light;
         light.position = light_pos;
-        let light_color = self.color_window.light_color;
+        let light_color = Vector3::new((dt * 2.0).sin(), (dt * 0.7).sin(), (dt * 1.3).sin());
         light.diffuse = light_color * 0.5;
         light.ambient = light.diffuse * 0.2;
 
