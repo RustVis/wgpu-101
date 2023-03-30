@@ -8,7 +8,7 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
-use crate::uniforms::{Uniforms, UniformsRef};
+use crate::uniforms::Uniforms;
 use crate::vertex::{Vertex, VERTICES};
 use crate::Error;
 
@@ -107,13 +107,12 @@ impl State {
         device: &wgpu::Device,
         uniforms: &Uniforms,
     ) -> (wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup) {
-        let uniforms_ref: UniformsRef = uniforms.as_ref();
-
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
-            contents: bytemuck::cast_slice(uniforms_ref),
+            contents: bytemuck::cast_slice(uniforms.as_ref()),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
+
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("Uniform Bind Group Layout"),
@@ -255,18 +254,13 @@ impl State {
 
     pub fn update(&mut self) {
         let dt = self.start_time.elapsed();
-        let dt = ANIMATION_SPEED * dt.as_secs_f32();
-        self.uniforms.color0.x = dt.sin();
-        self.uniforms.color0.y = dt.cos();
-        self.uniforms.color1.x = (dt + 0.32).sin();
-        self.uniforms.color1.y = (dt + 0.32).cos();
-        self.uniforms.color2.x = (dt + 0.67).sin();
-        self.uniforms.color2.y = (dt + 0.67).cos();
+        let _dt = ANIMATION_SPEED * dt.as_secs_f32();
 
-        let uniforms_ref: UniformsRef = self.uniforms.as_ref();
-
-        self.queue
-            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(uniforms_ref));
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(self.uniforms.as_ref()),
+        );
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {

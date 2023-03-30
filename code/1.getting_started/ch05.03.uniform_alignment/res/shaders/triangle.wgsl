@@ -13,7 +13,9 @@ struct VertexOutput {
 };
 
 struct Uniforms {
-	@location(0) colors: array<vec4<f32>, 3>,
+	@location(0) vec3_val0: vec3<f32>,
+	@location(1) vec3_val: vec3<f32>,
+	@location(2) f32_val: f32,
 };
 
 @group(0)
@@ -27,8 +29,11 @@ fn vs_main(
 	var out: VertexOutput;
 	out.position = vec4<f32>(in.position, 1.0);
 	out.vertex_index = in.vertex_index;
-	//out.color = in.color;
-	out.color = uniforms.colors[in.vertex_index];
+	if uniforms.vec3_val.x == 1.0 {
+		out.color = vec4(uniforms.vec3_val, uniforms.f32_val);
+	} else {
+		out.color = vec4(1.0);
+	}
 	return out;
 }
 

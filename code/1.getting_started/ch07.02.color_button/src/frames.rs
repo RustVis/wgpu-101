@@ -57,7 +57,7 @@ pub struct ColorWindow {
 impl Default for ColorWindow {
     fn default() -> Self {
         Self {
-            color: Vector3::new(0.3, 0.4, 0.5),
+            color: Vector3::new(1.0, 0.5, 0.3),
         }
     }
 }

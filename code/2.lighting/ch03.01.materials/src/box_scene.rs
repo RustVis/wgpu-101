@@ -114,21 +114,6 @@ impl BoxScene {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        /*
-        let material_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Box Material Buffer"),
-            size: 64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let light_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Box Light Buffer"),
-            size: 64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        */
-
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
