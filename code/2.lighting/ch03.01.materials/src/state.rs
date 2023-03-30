@@ -2,7 +2,6 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::Vector4;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use instant::Instant;
@@ -254,12 +253,10 @@ impl State {
         let light_pos = self.color_window.light_pos;
         {
             let light = &mut self.box_scene.light;
-            light.position = Vector4::new(light_pos.x, light_pos.y, light_pos.z, 1.0);
+            light.position = light_pos;
             let light_color = self.color_window.light_color;
-            let diffuse = light_color * 0.5;
-            light.diffuse = Vector4::new(diffuse.x, diffuse.y, diffuse.z, 1.0);
-            let ambient = diffuse * 0.2;
-            light.ambient = Vector4::new(ambient.x, ambient.y, ambient.z, 1.0);
+            light.diffuse = light_color * 0.5;
+            light.ambient = light.diffuse * 0.2;
         }
 
         self.queue.write_buffer(

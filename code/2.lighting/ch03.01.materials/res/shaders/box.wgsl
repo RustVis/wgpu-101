@@ -42,17 +42,18 @@ struct FragmentInput {
 };
 
 struct Material {
-	@location(0) ambient: vec4<f32>,
-	@location(1) diffuse: vec4<f32>,
-	@location(2) specular: vec4<f32>,
+	@location(0) ambient: vec3<f32>,
+	@location(1) diffuse: vec3<f32>,
+	@location(2) specular: vec3<f32>,
 	@location(3) shininess: i32,
 };
 
 struct Light {
-	@location(0) position: vec4<f32>,
-	@location(1) ambient: vec4<f32>,
-	@location(2) diffuse: vec4<f32>,
-	@location(3) specular: vec4<f32>,
+	@location(0) position: vec3<f32>,
+
+	@location(1) ambient: vec3<f32>,
+	@location(2) diffuse: vec3<f32>,
+	@location(3) specular: vec3<f32>,
 };
 
 @group(1)
@@ -83,5 +84,5 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	let specular = light.specular * (spec * material.specular);
 
 	let result = ambient + diffuse + specular;
-	return result;
+	return vec4(result, 1.0);
 }
