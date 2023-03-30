@@ -42,10 +42,11 @@ struct FragmentInput {
 };
 
 struct Material {
-	@location(0) ambient: vec3<f32>,
-	@location(1) diffuse: vec3<f32>,
-	@location(2) specular: vec3<f32>,
-	@location(3) shininess: f32,
+	@location(0) box_color: vec3<f32>,
+	@location(1) ambient: vec3<f32>,
+	@location(2) diffuse: vec3<f32>,
+	@location(3) specular: vec3<f32>,
+	@location(4) shininess: f32,
 };
 
 struct Light {
@@ -66,13 +67,13 @@ var<uniform> light: Light;
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	// ambient
-	let ambient = light.ambient * material.ambient;
+	let ambient = light.ambient * material.ambient * material.box_color;
 
   	// diffuse
 	let norm = normalize(in.normal);
 	let light_dir = normalize(light.position - in.frag_pos);
 	let diff = max(dot(norm, light_dir), 0.0);
-	let diffuse = light.diffuse * (diff * material.diffuse);
+	let diffuse = light.diffuse * (diff * material.diffuse * material.box_color);
 
 	// specular
 	// TODO(Shaohua): Move to uniform
@@ -80,7 +81,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	let view_dir = normalize(view_pos - in.frag_pos);
 	let reflect_dir = reflect(-light_dir, norm);
 	let spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-	let specular = light.specular * (spec * material.specular);
+	let specular = light.specular * (spec * material.specular * material.box_color);
 
 	let result = ambient + diffuse + specular;
 	return vec4<f32>(result, 1.0);

@@ -183,7 +183,7 @@ impl State {
         let (surface, device, queue, config, size, surface_format) =
             Self::create_surface(&window).await?;
 
-        let (egui_platform, egui_render_pass, mut color_window) =
+        let (egui_platform, egui_render_pass, color_window) =
             Self::create_egui_platform(&device, surface_format, size, window.scale_factor());
 
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
@@ -250,13 +250,16 @@ impl State {
         let dt = self.start_time.elapsed().as_secs_f64();
         self.egui_platform.update_time(dt);
 
-        //        self.queue.write_buffer(
-        //            &self.box_scene.uniform_buffer,
-        //            0,
-        //            bytemuck::cast_slice(self.box_scene.uniform.as_ref()),
-        //        );
-
+        self.box_scene.material.box_color = self.color_window.box_color.into();
         let light_pos = self.color_window.light_pos;
+        self.box_scene.light.position = light_pos.into();
+
+        self.queue.write_buffer(
+            &self.box_scene.material_buffer,
+            0,
+            bytemuck::cast_slice(self.box_scene.material.as_ref()),
+        );
+
         self.light_scene.uniform.reset();
         self.light_scene.uniform.set_position(light_pos);
         self.light_scene.uniform.scale((0.2, 0.2, 0.2).into());

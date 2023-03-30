@@ -8,6 +8,7 @@ mod error;
 mod frames;
 mod geometry;
 mod init;
+mod light;
 mod light_scene;
 mod scenes;
 mod state;

@@ -6,6 +6,7 @@ use cgmath::Vector4;
 use std::mem;
 use wgpu::util::DeviceExt;
 
+use crate::light::Light;
 use crate::scenes::create_vertex;
 use crate::texture::Texture;
 use crate::vertex::Vertex;
@@ -48,42 +49,35 @@ impl AsRef<BoxUniformBytes> for BoxUniform {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Material {
+    pub box_color: [f32; 3],
     pub ambient: [f32; 3],
     pub diffuse: [f32; 3],
     pub specular: [f32; 3],
     pub shininess: f32,
+    pad: [f32; 3],
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
+            box_color: [1.0, 0.5, 0.3],
             ambient: [1.0, 1.0, 1.0],
             diffuse: [1.0, 1.0, 1.0],
             specular: [1.0, 1.0, 1.0],
             shininess: 32.0,
+            pad: [0.0, 0.0, 0.0],
         }
     }
 }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Light {
-    pub position: [f32; 3],
-    pub ambient: [f32; 3],
-    pub diffuse: [f32; 3],
-    pub specular: [f32; 3],
-}
+pub type MaterialBytes = [f32; mem::size_of::<Material>() / mem::size_of::<f32>()];
+pub type MaterialRef<'a> = &'a MaterialBytes;
 
-impl Default for Light {
-    fn default() -> Self {
-        Self {
-            position: [-1.5, 1.5, 2.0],
-            ambient: [1.0, 1.0, 1.0],
-            diffuse: [1.0, 1.0, 1.0],
-            specular: [1.0, 1.0, 1.0],
-        }
+impl AsRef<MaterialBytes> for Material {
+    fn as_ref(&self) -> MaterialRef {
+        unsafe { mem::transmute(self) }
     }
 }
 
@@ -151,12 +145,12 @@ impl BoxScene {
         let light = Light::default();
         let material_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Box Material Buffer"),
-            contents: bytemuck::cast_slice(&[material]),
+            contents: bytemuck::cast_slice(material.as_ref()),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let light_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Box Light Buffer"),
-            contents: bytemuck::cast_slice(&[light]),
+            contents: bytemuck::cast_slice(light.as_ref()),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         //let light_uniform_buffer = init.device.create_buffer(&wgpu::BufferDescriptor {
