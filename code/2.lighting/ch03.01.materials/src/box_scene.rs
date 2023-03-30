@@ -4,7 +4,6 @@
 
 use cgmath::Vector4;
 use std::mem;
-use wgpu::util::DeviceExt;
 
 use crate::light::Light;
 use crate::scenes::create_vertex;
@@ -13,66 +12,25 @@ use crate::vertex::Vertex;
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct BoxUniform {
-    pub box_color: Vector4<f32>,
-    pub light_color: Vector4<f32>,
-    pub light_pos: Vector4<f32>,
-    pub view_pos: Vector4<f32>,
-    pub ambient_strength: f32,
-    pub specular_strength: f32,
-    pub shininess_strength: f32,
-    pad: [f32; 3],
-}
-
-impl Default for BoxUniform {
-    fn default() -> Self {
-        Self {
-            box_color: Vector4::new(1.0, 0.5, 0.31, 1.0),
-            light_color: Vector4::new(1.0, 1.0, 1.0, 1.0),
-            light_pos: Vector4::new(-1.5, 1.5, 2.0, 1.0),
-            view_pos: Vector4::new(1.0, 1.0, 1.0, 1.0),
-            ambient_strength: 0.1,
-            specular_strength: 0.5,
-            shininess_strength: 32.0,
-            pad: [0.0, 0.0, 0.0],
-        }
-    }
-}
-
-pub type BoxUniformBytes = [f32; mem::size_of::<BoxUniform>() / mem::size_of::<f32>()];
-pub type BoxUniformRef<'a> = &'a BoxUniformBytes;
-
-impl AsRef<BoxUniformBytes> for BoxUniform {
-    fn as_ref(&self) -> BoxUniformRef {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, PartialEq)]
 pub struct Material {
-    pub box_color: [f32; 3],
-    pub ambient: [f32; 3],
-    pub diffuse: [f32; 3],
-    pub specular: [f32; 3],
+    pub ambient: Vector4<f32>,
+    pub diffuse: Vector4<f32>,
+    pub specular: Vector4<f32>,
     pub shininess: f32,
-    pad: [f32; 3],
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
-            box_color: [1.0, 0.5, 0.3],
-            ambient: [1.0, 1.0, 1.0],
-            diffuse: [1.0, 1.0, 1.0],
-            specular: [1.0, 1.0, 1.0],
+            ambient: Vector4::new(1.0, 0.5, 0.31, 1.0),
+            diffuse: Vector4::new(1.0, 0.5, 0.31, 1.0),
+            specular: Vector4::new(0.5, 0.5, 0.5, 1.0),
             shininess: 32.0,
-            pad: [0.0, 0.0, 0.0],
         }
     }
 }
 
-pub type MaterialBytes = [f32; mem::size_of::<Material>() / mem::size_of::<f32>()];
+pub type MaterialBytes = [f32; 16];
 pub type MaterialRef<'a> = &'a MaterialBytes;
 
 impl AsRef<MaterialBytes> for Material {
@@ -143,6 +101,8 @@ impl BoxScene {
     ) {
         let material = Material::default();
         let light = Light::default();
+
+        /*
         let material_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Box Material Buffer"),
             contents: bytemuck::cast_slice(material.as_ref()),
@@ -153,12 +113,20 @@ impl BoxScene {
             contents: bytemuck::cast_slice(light.as_ref()),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        //let light_uniform_buffer = init.device.create_buffer(&wgpu::BufferDescriptor {
-        //    label: Some("Light Uniform Buffer"),
-        //    size: 48,
-        //    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        //    mapped_at_creation: false,
-        //});
+        */
+
+        let material_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Box Material Buffer"),
+            size: 64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let light_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Box Light Buffer"),
+            size: 64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[

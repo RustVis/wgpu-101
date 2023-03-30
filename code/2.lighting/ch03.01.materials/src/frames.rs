@@ -128,23 +128,15 @@ impl FpsWindow {
 
 #[derive(Debug, Clone)]
 pub struct BoxUniformWindow {
-    pub box_color: Vector3<f32>,
+    pub light_color: Vector3<f32>,
     pub light_pos: Vector3<f32>,
-    pub ambient_color: Vector3<f32>,
-    pub diffuse_color: Vector3<f32>,
-    pub specular: Vector3<f32>,
-    pub shininess_strength: i32,
 }
 
 impl Default for BoxUniformWindow {
     fn default() -> Self {
         Self {
-            box_color: Vector3::new(1.0, 0.5, 0.31),
+            light_color: Vector3::new(1.0, 1.0, 1.0),
             light_pos: Vector3::new(-1.5, 1.5, 2.0),
-            ambient_color: Vector3::new(1.0, 1.0, 1.0),
-            diffuse_color: Vector3::new(1.0, 1.0, 1.0),
-            specular: Vector3::new(0.5, 0.5, 0.5),
-            shininess_strength: 4,
         }
     }
 }
@@ -155,8 +147,8 @@ impl BoxUniformWindow {
             .default_width(320.0)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label("Box Color:");
-                    ui.color_edit_button_rgb(self.box_color.as_mut());
+                    ui.label("Light Color:");
+                    ui.color_edit_button_rgb(self.light_color.as_mut());
                 });
 
                 ui.horizontal(|ui| {
@@ -164,26 +156,6 @@ impl BoxUniformWindow {
                     ui.add(egui::Slider::new(&mut self.light_pos.x, -3.0..=3.0));
                     ui.add(egui::Slider::new(&mut self.light_pos.y, -3.0..=3.0));
                     ui.add(egui::Slider::new(&mut self.light_pos.z, -3.0..=3.0));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Ambient Color:");
-                    ui.color_edit_button_rgb(self.ambient_color.as_mut());
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Diffuse Color:");
-                    ui.color_edit_button_rgb(self.diffuse_color.as_mut());
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Specular:");
-                    ui.color_edit_button_rgb(self.specular.as_mut());
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Shininess Strength:");
-                    ui.add(egui::Slider::new(&mut self.shininess_strength, 2..=64));
                 });
             });
     }

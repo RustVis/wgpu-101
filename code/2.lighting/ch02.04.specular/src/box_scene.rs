@@ -102,12 +102,6 @@ impl BoxScene {
             contents: bytemuck::cast_slice(uniform_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        //let light_uniform_buffer = init.device.create_buffer(&wgpu::BufferDescriptor {
-        //    label: Some("Light Uniform Buffer"),
-        //    size: 48,
-        //    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        //    mapped_at_creation: false,
-        //});
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
