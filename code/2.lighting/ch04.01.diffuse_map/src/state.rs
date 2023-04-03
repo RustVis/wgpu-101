@@ -190,7 +190,7 @@ impl State {
         let (camera, camera_buffer, camera_bind_group_layout, camera_bind_group) =
             Self::create_camera(&device, size)?;
 
-        let box_scene = BoxScene::new(&device, &config, &camera_bind_group_layout);
+        let box_scene = BoxScene::new(&device, &queue, &config, &camera_bind_group_layout)?;
         let light_scene = LightScene::new(&device, &config, &camera_bind_group_layout);
 
         let depth_texture = Texture::create_depth_texture(&device, size, Some("Depth Texture"));
@@ -259,6 +259,7 @@ impl State {
         light.diffuse = light_color * 0.5;
         light.ambient = light.diffuse * 0.2;
 
+        /*
         self.queue.write_buffer(
             &self.box_scene.material_buffer,
             0,
@@ -269,6 +270,7 @@ impl State {
             0,
             bytemuck::cast_slice(self.box_scene.light.as_ref()),
         );
+        */
 
         self.light_scene.uniform.reset();
         self.light_scene.uniform.set_position(light_pos);
@@ -327,6 +329,7 @@ impl State {
             render_pass.set_pipeline(&self.box_scene.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_bind_group(1, &self.box_scene.uniform_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.box_scene.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.box_scene.vertex_buffer.slice(..));
             render_pass.set_index_buffer(
                 self.box_scene.index_buffer.slice(..),

@@ -6,6 +6,7 @@ use cgmath::Vector3;
 use std::mem;
 use wgpu::util::DeviceExt;
 
+use crate::error::Error;
 use crate::light::Light;
 use crate::scenes::create_vertex;
 use crate::texture::Texture;
@@ -59,14 +60,17 @@ pub struct BoxScene {
     pub material_buffer: wgpu::Buffer,
     pub light_buffer: wgpu::Buffer,
     pub uniform_bind_group: wgpu::BindGroup,
+
+    pub texture_bind_group: wgpu::BindGroup,
 }
 
 impl BoxScene {
     pub fn new(
         device: &wgpu::Device,
+        queue: &wgpu::Queue,
         config: &wgpu::SurfaceConfiguration,
         camera_bind_group_layout: &wgpu::BindGroupLayout,
-    ) -> Self {
+    ) -> Result<Self, Error> {
         let (
             material,
             light,
@@ -76,12 +80,18 @@ impl BoxScene {
             uniform_bind_group,
         ) = Self::create_uniform(device);
 
-        let bind_group_layouts = [camera_bind_group_layout, &uniform_bind_group_layout];
+        let (texture_bind_group_layout, texture_bind_group) = Self::create_texture(device, queue)?;
+
+        let bind_group_layouts = [
+            camera_bind_group_layout,
+            &uniform_bind_group_layout,
+            &texture_bind_group_layout,
+        ];
         let render_pipeline = Self::create_render_pipeline(device, config, &bind_group_layouts);
 
         let (vertex_buffer, index_buffer, num_indices) = create_vertex(device);
 
-        Self {
+        Ok(Self {
             render_pipeline,
 
             vertex_buffer,
@@ -93,7 +103,9 @@ impl BoxScene {
             material_buffer,
             light_buffer,
             uniform_bind_group,
-        }
+
+            texture_bind_group,
+        })
     }
 
     pub fn create_uniform(
@@ -169,6 +181,55 @@ impl BoxScene {
             bind_group_layout,
             bind_group,
         )
+    }
+
+    fn create_texture(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
+        let texture_bytes = include_bytes!("../res/textures/container2.png");
+        let container_texture =
+            Texture::from_bytes(device, queue, texture_bytes, Some("container2"))?;
+
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
+
+        let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
+                },
+            ],
+            label: Some("texture_bind_group"),
+        });
+
+        Ok((texture_bind_group_layout, texture_bind_group))
     }
 
     fn create_render_pipeline(
