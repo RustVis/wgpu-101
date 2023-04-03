@@ -17,7 +17,7 @@ cfg-if = "1.0.0"
 cgmath = "0.18.0"
 log = "0.4.17"
 pollster = "0.3.0"
-thiserror = "1.0.39"
+thiserror = "1.0.40"
 winit = "0.28.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

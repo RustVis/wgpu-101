@@ -18,10 +18,10 @@ cgmath = "0.18.0"
 egui = { version = "0.21.0", features = ["bytemuck"] }
 egui_winit_platform = "0.18.0"
 epi = "0.17.0"
-image = { version = "0.24.5", default-features = false, features = ["jpeg", "png"] }
+image = { version = "0.24.6", default-features = false, features = ["jpeg", "png"] }
 log = "0.4.17"
 pollster = "0.3.0"
-thiserror = "1.0.39"
+thiserror = "1.0.40"
 winit = "0.28.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
