@@ -64,16 +64,27 @@ var<uniform> material: Material;
 @binding(1)
 var<uniform> light: Light;
 
+@group(2)
+@binding(0)
+var box_texture: texture_2d<f32>;
+
+@group(2)
+@binding(1)
+var texture_sampler: sampler;
+
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
+	let material_diffuse = textureSample(box_texture,
+	                                     texture_sampler,
+	                                     in.tex_coords).rgb;
 	// ambient
-	let ambient = light.ambient * material.ambient;
+	let ambient = light.ambient * material_diffuse;
 
   	// diffuse
 	let norm = normalize(in.normal);
 	let light_dir = normalize(light.position.xyz - in.frag_pos);
 	let diff = max(dot(norm, light_dir), 0.0);
-	let diffuse = light.diffuse * (diff * material.diffuse);
+	let diffuse = light.diffuse * (diff * material_diffuse);
 
 	// specular
 	// TODO(Shaohua): Move to uniform
