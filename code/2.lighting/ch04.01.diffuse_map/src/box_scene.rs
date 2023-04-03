@@ -15,30 +15,26 @@ use crate::vertex::Vertex;
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Material {
-    pub ambient: Vector3<f32>,
-    pad0: f32,
     pub diffuse: Vector3<f32>,
     pad1: f32,
     pub specular: Vector3<f32>,
     pad2: f32,
-    pub shininess: f32,
+    pub shininess: i32,
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
-            ambient: Vector3::new(1.0, 0.5, 0.31),
-            pad0: 1.0,
             diffuse: Vector3::new(1.0, 0.5, 0.31),
             pad1: 1.0,
             specular: Vector3::new(0.5, 0.5, 0.5),
             pad2: 1.0,
-            shininess: 32.0,
+            shininess: 32,
         }
     }
 }
 
-pub type MaterialBytes = [f32; 16];
+pub type MaterialBytes = [f32; 12];
 pub type MaterialRef<'a> = &'a MaterialBytes;
 
 impl AsRef<MaterialBytes> for Material {
