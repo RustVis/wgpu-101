@@ -69,16 +69,16 @@ var<uniform> light: Light;
 
 @group(2)
 @binding(0)
-var box_texture: texture_2d<f32>;
+var diffuse_texture: texture_2d<f32>;
 
 @group(2)
 @binding(1)
-var texture_sampler: sampler;
+var diffuse_sampler: sampler;
 
 @fragment
 fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
-	let material_diffuse = textureSample(box_texture,
-	                                     texture_sampler,
+	let material_diffuse = textureSample(diffuse_texture,
+	                                     diffuse_sampler,
 	                                     in.tex_coords).rgb;
 	// ambient
 	let ambient = light.ambient * material_diffuse;

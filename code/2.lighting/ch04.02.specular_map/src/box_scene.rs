@@ -181,9 +181,13 @@ impl BoxScene {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<(wgpu::BindGroupLayout, wgpu::BindGroup), Error> {
-        let texture_bytes = include_bytes!("../res/textures/container2.png");
-        let container_texture =
-            Texture::from_bytes(device, queue, texture_bytes, Some("container2"))?;
+        let diffuse_bytes = include_bytes!("../res/textures/container2.png");
+        let diffuse_texture =
+            Texture::from_bytes(device, queue, diffuse_bytes, Some("diffuse texture"))?;
+
+        let specular_bytes = include_bytes!("../res/textures/container2_specular.png");
+        let specular_texture =
+            Texture::from_bytes(device, queue, specular_bytes, Some("specular texture"))?;
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -204,6 +208,22 @@ impl BoxScene {
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
                 ],
                 label: Some("texture_bind_group_layout"),
             });
@@ -213,11 +233,19 @@ impl BoxScene {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&container_texture.view),
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&container_texture.sampler),
+                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&specular_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&specular_texture.sampler),
                 },
             ],
             label: Some("texture_bind_group"),
