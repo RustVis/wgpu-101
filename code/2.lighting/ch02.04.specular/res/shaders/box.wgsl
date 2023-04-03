@@ -11,10 +11,12 @@ struct VertexOutput {
 	@location(0) frag_pos: vec3<f32>,
 	@location(1) normal: vec3<f32>,
 	@location(2) tex_coords: vec2<f32>,
+	@location(3) view_pos: vec3<f32>,
 };
 
 struct CameraUniform {
 	@location(0) view_proj: mat4x4<f32>,
+	@location(1) view_pos: vec3<f32>,
 }
 
 @group(0)
@@ -30,6 +32,7 @@ fn vs_main(
 	out.frag_pos = in.position;
 	out.normal = in.normal;
 	out.tex_coords = in.tex_coords;
+	out.view_pos = camera_uniform.view_pos;
 	return out;
 }
 
@@ -39,16 +42,16 @@ struct FragmentInput {
 	@location(0) frag_pos: vec3<f32>,
 	@location(1) normal: vec3<f32>,
 	@location(2) tex_coords: vec2<f32>,
+	@location(3) view_pos: vec3<f32>,
 };
 
 struct BoxUniform {
 	@location(0) box_color: vec4<f32>,
 	@location(1) light_color: vec4<f32>,
 	@location(2) light_pos: vec4<f32>,
-	@location(3) view_pos: vec4<f32>,
-	@location(4) ambient_strength: f32,
-	@location(5) specular_strength: f32,
-	@location(6) shininess_strength: f32,
+	@location(3) ambient_strength: f32,
+	@location(4) specular_strength: f32,
+	@location(4) shininess_strength: f32,
 };
 
 @group(1)
@@ -67,7 +70,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	let diffuse = diff * box_uniform.light_color;
 
 	// specular
-	let view_dir = normalize(box_uniform.view_pos.xyz - in.frag_pos);
+	let view_dir = normalize(in.view_pos - in.frag_pos);
 	let reflect_dir = reflect(-light_dir, norm);
 	let spec = pow(max(dot(view_dir, reflect_dir), 0.0), box_uniform.shininess_strength);
 	let specular = box_uniform.specular_strength * spec * box_uniform.light_color;

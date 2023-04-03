@@ -11,10 +11,12 @@ struct VertexOutput {
 	@location(0) frag_pos: vec3<f32>,
 	@location(1) normal: vec3<f32>,
 	@location(2) tex_coords: vec2<f32>,
+	@location(3) view_pos: vec3<f32>,
 };
 
 struct CameraUniform {
 	@location(0) view_proj: mat4x4<f32>,
+	@location(1) view_pos: vec3<f32>,
 }
 
 @group(0)
@@ -30,6 +32,7 @@ fn vs_main(
 	out.frag_pos = in.position;
 	out.normal = in.normal;
 	out.tex_coords = in.tex_coords;
+	out.view_pos = camera_uniform.view_pos;
 	return out;
 }
 
@@ -39,6 +42,7 @@ struct FragmentInput {
 	@location(0) frag_pos: vec3<f32>,
 	@location(1) normal: vec3<f32>,
 	@location(2) tex_coords: vec2<f32>,
+	@location(3) view_pos: vec3<f32>,
 };
 
 struct Material {
@@ -76,9 +80,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	let diffuse = light.diffuse * (diff * material.diffuse);
 
 	// specular
-	// TODO(Shaohua): Move to uniform
-	let view_pos = vec3<f32>(1.0, 1.0, 1.0);
-	let view_dir = normalize(view_pos - in.frag_pos);
+	let view_dir = normalize(in.view_pos - in.frag_pos);
 	let reflect_dir = reflect(-light_dir, norm);
 	let spec = pow(max(dot(view_dir, reflect_dir), 0.0), f32(material.shininess));
 	let specular = light.specular * (spec * material.specular);

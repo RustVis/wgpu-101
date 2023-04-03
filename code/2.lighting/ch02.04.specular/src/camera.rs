@@ -67,6 +67,7 @@ impl Camera {
         let view = Matrix4::look_at_rh(self.eye, self.target, self.up);
         let proj = perspective(Deg(self.fovy), self.aspect, self.zoom_near, self.zoom_far);
         self.uniform.view_proj = OPENGL_TO_WGPU_MATRIX * proj * view;
+        self.uniform.view_pos = Vector3::new(self.eye.x, self.eye.y, self.eye.z);
     }
 
     pub fn uniform_ref(&self) -> CameraUniformRef {
@@ -192,17 +193,21 @@ impl Camera {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CameraUniform {
     pub view_proj: Matrix4<f32>,
+    pub view_pos: Vector3<f32>,
+    pad: f32,
 }
 
 impl Default for CameraUniform {
     fn default() -> Self {
         Self {
             view_proj: Matrix4::one(),
+            view_pos: Vector3::new(0.0, 0.0, 0.0),
+            pad: 0.0,
         }
     }
 }
 
-pub type CameraUniformBytes = [f32; 16];
+pub type CameraUniformBytes = [f32; 20];
 pub type CameraUniformRef<'a> = &'a CameraUniformBytes;
 
 impl AsRef<CameraUniformBytes> for CameraUniform {
