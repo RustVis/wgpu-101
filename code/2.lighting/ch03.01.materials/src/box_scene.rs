@@ -20,7 +20,7 @@ pub struct Material {
     pad1: f32,
     pub specular: Vector3<f32>,
     pad2: f32,
-    pub shininess: f32,
+    pub shininess: i32,
 }
 
 impl Default for Material {
@@ -32,7 +32,7 @@ impl Default for Material {
             pad1: 1.0,
             specular: Vector3::new(0.5, 0.5, 0.5),
             pad2: 1.0,
-            shininess: 32.0,
+            shininess: 32,
         }
     }
 }
