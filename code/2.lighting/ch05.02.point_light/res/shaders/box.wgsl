@@ -52,11 +52,15 @@ struct Material {
 };
 
 struct Light {
-	@location(0) direction: vec3<f32>,
+	@location(0) position: vec3<f32>,
 
 	@location(1) ambient: vec3<f32>,
 	@location(2) diffuse: vec3<f32>,
 	@location(3) specular: vec3<f32>,
+
+	@location(4) constant: f32,
+	@location(5) linear: f32,
+	@location(6) quadratic: f32,
 };
 
 @group(1)
@@ -97,7 +101,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 
   	// diffuse
 	let norm = normalize(in.normal);
-	let light_dir = normalize(-light.direction);
+	let light_dir = normalize(light.position - in.frag_pos);
 	let diff = max(dot(norm, light_dir), 0.0);
 	let diffuse = light.diffuse * diff * material_diffuse;
 
@@ -107,6 +111,11 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	let spec = pow(max(dot(view_dir, reflect_dir), 0.0), f32(material.shininess));
 	let specular = light.specular * spec * material_specular;
 
-	let result = ambient + diffuse + specular;
+	// attenuation
+	let distance = length(light.position - in.frag_pos);
+	let attenuation = 1.0 / (light.constant + light.linear * distance +
+		light.quadratic * distance * distance);
+
+	let result = (ambient + diffuse + specular) * attenuation;
 	return vec4(result, 1.0);
 }
