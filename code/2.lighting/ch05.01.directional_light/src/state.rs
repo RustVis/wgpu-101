@@ -259,7 +259,6 @@ impl State {
 
         let light_pos = self.color_window.light_pos;
         let light = &mut self.box_scene.light;
-        light.position = light_pos;
         let light_color = Vector3::new(1.0, 1.0, 1.0);
         light.diffuse = light_color * 0.5;
         light.ambient = light.diffuse * 0.2;

@@ -52,7 +52,7 @@ struct Material {
 };
 
 struct Light {
-	@location(0) position: vec3<f32>,
+	@location(0) direction: vec3<f32>,
 
 	@location(1) ambient: vec3<f32>,
 	@location(2) diffuse: vec3<f32>,
@@ -97,7 +97,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 
   	// diffuse
 	let norm = normalize(in.normal);
-	let light_dir = normalize(light.position - in.frag_pos);
+	let light_dir = normalize(-light.direction);
 	let diff = max(dot(norm, light_dir), 0.0);
 	let diffuse = light.diffuse * diff * material_diffuse;
 

@@ -8,7 +8,7 @@ use std::mem;
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Light {
-    pub position: Vector3<f32>,
+    pub direction: Vector3<f32>,
     pad0: f32,
 
     pub ambient: Vector3<f32>,
@@ -22,7 +22,7 @@ pub struct Light {
 impl Default for Light {
     fn default() -> Self {
         Self {
-            position: Vector3::new(-1.5, 1.5, 2.0),
+            direction: Vector3::new(-0.2, -1.0, -0.3),
             pad0: 1.0,
 
             ambient: Vector3::new(0.2, 0.2, 0.2),
