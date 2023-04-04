@@ -53,14 +53,16 @@ struct Material {
 
 struct Light {
 	@location(0) position: vec3<f32>,
+	@location(1) direction: vec3<f32>,
+	@location(2) cutoff: f32,
 
-	@location(1) ambient: vec3<f32>,
-	@location(2) diffuse: vec3<f32>,
-	@location(3) specular: vec3<f32>,
+	@location(3) ambient: vec3<f32>,
+	@location(4) diffuse: vec3<f32>,
+	@location(5) specular: vec3<f32>,
 
-	@location(4) constant: f32,
-	@location(5) linear: f32,
-	@location(6) quadratic: f32,
+	@location(6) constant: f32,
+	@location(7) linear: f32,
+	@location(8) quadratic: f32,
 };
 
 @group(1)
@@ -99,9 +101,15 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 	// ambient
 	let ambient = light.ambient * material_diffuse;
 
+	let light_dir = normalize(light.position - in.frag_pos);
+	let theta = dot(light_dir, normalize(-light.direction));
+
+	if theta <= light.cutoff {
+		return vec4(ambient, 1.0);
+	}
+
   	// diffuse
 	let norm = normalize(in.normal);
-	let light_dir = normalize(light.position - in.frag_pos);
 	let diff = max(dot(norm, light_dir), 0.0);
 	let diffuse = light.diffuse * diff * material_diffuse;
 

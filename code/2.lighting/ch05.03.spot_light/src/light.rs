@@ -2,7 +2,7 @@
 // Use of this source is governed by General Public License that can be found
 // in the LICENSE file.
 
-use cgmath::Vector3;
+use cgmath::{Angle, Rad, Vector3};
 use std::mem;
 
 #[repr(C)]
@@ -10,6 +10,9 @@ use std::mem;
 pub struct Light {
     pub position: Vector3<f32>,
     pad0: f32,
+
+    pub direction: Vector3<f32>,
+    pub cutoff: f32,
 
     pub ambient: Vector3<f32>,
     pad1: f32,
@@ -29,6 +32,9 @@ impl Default for Light {
             position: Vector3::new(-1.5, 1.5, 2.0),
             pad0: 1.0,
 
+            direction: Vector3::new(0.0, 0.0, 0.0),
+            cutoff: Rad(12.5).cos(),
+
             ambient: Vector3::new(0.2, 0.2, 0.2),
             pad1: 1.0,
             diffuse: Vector3::new(0.5, 0.5, 0.5),
@@ -43,7 +49,7 @@ impl Default for Light {
     }
 }
 
-pub type LightBytes = [f32; 20];
+pub type LightBytes = [f32; 24];
 pub type LightRef<'a> = &'a LightBytes;
 
 impl AsRef<LightBytes> for Light {

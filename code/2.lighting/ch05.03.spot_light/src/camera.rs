@@ -63,6 +63,10 @@ impl Camera {
         instance
     }
 
+    pub const fn position(&self) -> Vector3<f32> {
+        Vector3::new(self.eye.x, self.eye.y, self.eye.z)
+    }
+
     fn update_uniform(&mut self) {
         let view = Matrix4::look_at_rh(self.eye, self.target, self.up);
         let proj = perspective(Deg(self.fovy), self.aspect, self.zoom_near, self.zoom_far);
