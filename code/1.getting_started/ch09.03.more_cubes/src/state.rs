@@ -90,7 +90,7 @@ impl State {
             .formats
             .iter()
             .copied()
-            .find(|f| f.describe().srgb)
+            .find(wgpu::TextureFormat::is_srgb)
             .unwrap_or(surface_caps.formats[0]);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
