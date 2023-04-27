@@ -24,13 +24,13 @@ thiserror = "1.0.40"
 winit = "0.28.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-egui_wgpu_backend = "0.22.0"
+egui_wgpu_backend = { git = "https://github.com/RustVis/egui_wgpu_backend", rev = "3bea68f5" }
 env_logger = "0.10.0"
 instant = "0.1"
 wgpu = "0.16.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-egui_wgpu_backend = { version = "0.22.0", features = ["web"] }
+egui_wgpu_backend = { git = "https://github.com/RustVis/egui_wgpu_backend", rev = "3bea68f5", features = ["web"] }
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 wasm-bindgen = "0.2.84"
 wasm-bindgen-futures = "0.4.34"
