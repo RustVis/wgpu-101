@@ -18,17 +18,17 @@ image = { version = "0.24.6", default-features = false, features = ["jpeg", "png
 log = "0.4.17"
 pollster = "0.3.0"
 thiserror = "1.0.40"
-winit = "0.28.3"
+winit = "0.28.6"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.10.0"
 wgpu = "0.16.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2.84"
-wasm-bindgen-futures = "0.4.34"
+wasm-bindgen = "0.2.86"
+wasm-bindgen-futures = "0.4.36"
 wasm-logger = "0.2.0"
-web-sys = { version = "0.3.61", features = [
+web-sys = { version = "0.3.63", features = [
   "Document",
   "Element",
   "HtmlCanvasElement",

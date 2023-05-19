@@ -9,7 +9,7 @@ name = "p1_getting_started_ch01_01_hello_window"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.70"
+anyhow = "1.0.71"
 env_logger = "0.10.0"
 log = "0.4.17"
-winit = "0.28.3"
+winit = "0.28.6"

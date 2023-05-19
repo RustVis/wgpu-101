@@ -35,9 +35,9 @@ impl Default for Light {
             direction: Vector3::new(0.0, 0.0, 0.0),
             cutoff: Rad(12.5).cos(),
 
-            ambient: Vector3::new(0.2, 0.2, 0.2),
+            ambient: Vector3::new(0.1, 0.1, 0.1),
             pad1: 1.0,
-            diffuse: Vector3::new(0.5, 0.5, 0.5),
+            diffuse: Vector3::new(0.8, 0.8, 0.8),
             pad2: 1.0,
             specular: Vector3::new(1.0, 1.0, 1.0),
 

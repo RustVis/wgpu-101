@@ -67,6 +67,13 @@ impl Camera {
         Vector3::new(self.eye.x, self.eye.y, self.eye.z)
     }
 
+    pub fn front(&self) -> Vector3<f32> {
+        let x = self.eye.x - self.target.x;
+        let y = self.eye.y - self.target.y;
+        let z = self.eye.z - self.target.z;
+        Vector3::new(x, y, z)
+    }
+
     fn update_uniform(&mut self) {
         let view = Matrix4::look_at_rh(self.eye, self.target, self.up);
         let proj = perspective(Deg(self.fovy), self.aspect, self.zoom_near, self.zoom_far);
