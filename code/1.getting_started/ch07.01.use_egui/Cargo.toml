@@ -19,7 +19,7 @@ egui = { version = "0.21.0", features = ["bytemuck"] }
 egui_demo_lib = "0.21.0"
 egui_winit_platform = "0.18.0"
 epi = "0.17.0"
-log = "0.4.17"
+log = "0.4.18"
 pollster = "0.3.0"
 thiserror = "1.0.40"
 winit = "0.28.6"

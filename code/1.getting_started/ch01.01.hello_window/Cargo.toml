@@ -11,5 +11,5 @@ path = "src/bin/main.rs"
 [dependencies]
 anyhow = "1.0.71"
 env_logger = "0.10.0"
-log = "0.4.17"
+log = "0.4.18"
 winit = "0.28.6"
