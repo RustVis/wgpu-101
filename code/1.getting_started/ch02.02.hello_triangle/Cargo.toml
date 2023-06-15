@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cfg-if = "1.0.0"
-log = "0.4.18"
+log = "0.4.19"
 pollster = "0.3.0"
 thiserror = "1.0.40"
 winit = "0.28.6"
@@ -23,10 +23,10 @@ env_logger = "0.10.0"
 wgpu = "0.16.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2.86"
-wasm-bindgen-futures = "0.4.36"
+wasm-bindgen = "0.2.87"
+wasm-bindgen-futures = "0.4.37"
 wasm-logger = "0.2.0"
-web-sys = { version = "0.3.63", features = [
+web-sys = { version = "0.3.64", features = [
   "Document",
   "Element",
   "HtmlCanvasElement",
