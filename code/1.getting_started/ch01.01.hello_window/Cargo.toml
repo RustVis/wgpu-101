@@ -10,6 +10,6 @@ path = "src/bin/main.rs"
 
 [dependencies]
 anyhow = "1.0.75"
-env_logger = "0.10.0"
+env_logger = "0.10.1"
 log = "0.4.20"
-winit = "0.28.6"
+winit = "0.28.7"
