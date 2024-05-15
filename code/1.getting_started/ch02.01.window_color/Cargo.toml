@@ -15,7 +15,7 @@ crate-type = ["cdylib", "rlib"]
 cfg-if = "1.0.0"
 log = "0.4.21"
 pollster = "0.3.0"
-thiserror = "1.0.58"
+thiserror = "1.0.60"
 winit = "0.28.7"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
