@@ -12,25 +12,25 @@ path = "src/bin/main.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-bytemuck = { version = "1.16.0", features = ["derive"] }
+bytemuck = { version = "1.23.0", features = ["derive"] }
 cfg-if = "1.0.0"
-log = "0.4.21"
-pollster = "0.3.0"
-thiserror = "1.0.60"
-winit = "0.28.7"
+log = "0.4.27"
+pollster = "0.4.0"
+thiserror = "2.0.12"
+winit = "0.30.10"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "0.10.2"
-wgpu = "0.17.2"
+env_logger = "0.11.8"
+wgpu = "25.0.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2.92"
-wasm-bindgen-futures = "0.4.42"
+wasm-bindgen = "0.2.100"
+wasm-bindgen-futures = "0.4.50"
 wasm-logger = "0.2.0"
-web-sys = { version = "0.3.69", features = [
+web-sys = { version = "0.3.77", features = [
   "Document",
   "Element",
   "HtmlCanvasElement",
   "Window",
 ]}
-wgpu = { version = "0.17.2", features = ["webgl"] }
+wgpu = { version = "25.0.0", features = ["webgl"] }
